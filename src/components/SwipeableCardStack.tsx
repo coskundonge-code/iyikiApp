@@ -546,17 +546,33 @@ export default function SwipeableCardStack({
         // 3) Debounce kilidi
         setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
       } else {
-        // Urun seviyesinde dikey = markalara geri don
+        // Urun seviyesinde dikey = SONRAKI/ONCEKI markaya git
+        const maxIdx = brands.length - 1;
+        const nextBrandIdx = direction === "up" ? brandIndex + 1 : brandIndex - 1;
+        const canGo = nextBrandIdx >= 0 && nextBrandIdx <= maxIdx;
+
         verticalLock.current = true;
         setSlideOut(direction);
         setTimeout(() => {
-          backToBrands();
+          if (canGo) {
+            // Sonraki/onceki markaya gec ve urun seviyesinden cik
+            setBrandIndex(nextBrandIdx);
+            setSelectedBrandId(brands[nextBrandIdx].id);
+            setProductIndex(0);
+            setLevel("brands");
+          } else {
+            // Sinirdaysak sadece markalar seviyesine don
+            setLevel("brands");
+            setSelectedBrandId(null);
+            setProductIndex(0);
+          }
           setSlideOut(null);
+          setIsAnimating(false);
         }, VERTICAL_SLIDE_MS);
         setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
       }
     },
-    [isAnimating, level, brands.length, brandIndex, backToBrands]
+    [isAnimating, level, brands, brandIndex]
   );
 
   /* ═══════════════════════════════════════════════════════════════
