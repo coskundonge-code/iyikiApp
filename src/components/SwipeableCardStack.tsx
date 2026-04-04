@@ -15,26 +15,38 @@ import {
   ArrowLeft,
   Store,
   Gift as GiftIcon,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Gift } from "@/types";
 
 /* ═══════════════════════════════════════════════════════════════
-   TINDER + APPLE SMART STACK — PROFESSIONAL CARD STACK
-   v3: Smooth transitions, no jitter, correct dot behavior
+   TINDER + APPLE SMART STACK — PROFESSIONAL CARD STACK v4
+
+   Navigasyon modeli:
+   ─ MARKA seviyesi:
+     • Dikey kayma → markalar arasi gecis
+     • Saga kaydir → markanin urunlerine gir
+     • Sola kaydir → sonraki markaya gec
+   ─ URUN seviyesi:
+     • Sola kaydir → sonraki urune gec (Tinder "pass")
+     • Saga kaydir → hediye gonder (Tinder "like")
+     • Dikey kayma → markalara geri don
+     • Son urun sola kaydirinca → markalara geri don
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Constants ── */
-const SWIPE_VELOCITY_THRESHOLD = 350;
-const SWIPE_POSITION_THRESHOLD = 70;
+const SWIPE_VELOCITY_THRESHOLD = 300;
+const SWIPE_POSITION_THRESHOLD = 60;
 const THROW_DISTANCE = 1500;
-const ROTATION_RANGE = 30;
-const THROW_DURATION = 1.0;             // SLOWER throw for visibility
+const ROTATION_RANGE = 25;
+const THROW_DURATION = 1.2;             // Cok yavas throw — net gorulebilir
 
-const VERTICAL_DRAG_THRESHOLD = 30;
+const VERTICAL_DRAG_THRESHOLD = 35;
+const VERTICAL_DEBOUNCE_MS = 900;       // Yavas dikey gecis
 const MAX_VISIBLE = 3;
 
-/* ── Brand gradients ── */
+/* ── Gradients ── */
 const BRAND_GRADIENTS: Record<string, { bg: string; glow: string }> = {
   Starbucks: { bg: "from-emerald-400 via-green-500 to-teal-600", glow: "shadow-emerald-400/30" },
   Migros: { bg: "from-orange-400 via-amber-500 to-yellow-600", glow: "shadow-orange-400/30" },
@@ -66,7 +78,7 @@ export interface Brand {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   TINDER-STYLE TOP CARD — Draggable with throw physics
+   TINDER-STYLE TOP CARD
    ═══════════════════════════════════════════════════════════════ */
 function TinderCard({
   children,
@@ -103,7 +115,7 @@ function TinderCard({
 
   const handleDragEnd = async (_: unknown, info: PanInfo) => {
     if (disabled) {
-      await controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 25 } });
+      await controls.start({ x: 0, transition: { type: "spring", stiffness: 200, damping: 20 } });
       return;
     }
 
@@ -132,11 +144,12 @@ function TinderCard({
       });
       onSwipeLeft();
     } else {
+      // Snap back — very gentle
       await controls.start({
         x: 0,
         rotate: 0,
         opacity: 1,
-        transition: { type: "spring", stiffness: 200, damping: 20, mass: 1.2 },
+        transition: { type: "spring", stiffness: 150, damping: 18, mass: 1.5 },
       });
     }
   };
@@ -173,7 +186,6 @@ function TinderCard({
         rotate,
         zIndex: 50,
         touchAction: "none",
-        willChange: "transform",
       }}
       drag={disabled ? false : "x"}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
@@ -181,7 +193,7 @@ function TinderCard({
       dragMomentum={false}
       onDragEnd={handleDragEnd}
       animate={controls}
-      initial={{ scale: 1, opacity: 1, x: 0 }}
+      initial={false}
     >
       <motion.div
         className="absolute inset-0 rounded-[28px] z-[5] pointer-events-none"
@@ -234,31 +246,19 @@ function TinderCard({
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CARD CONTENT RENDERERS
+   CARD SHELLS
    ═══════════════════════════════════════════════════════════════ */
 
-function CardShell({
-  gradient,
-  glow,
-  children,
-}: {
-  gradient: string;
-  glow: string;
-  children: React.ReactNode;
-}) {
+function CardShell({ gradient, glow, children }: { gradient: string; glow: string; children: React.ReactNode }) {
   return (
     <div className={cn("relative w-full h-full rounded-[28px] overflow-hidden shadow-2xl", glow)}>
       <div className={cn("absolute inset-0 bg-gradient-to-br", gradient)} />
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-14 -left-14 w-52 h-52 rounded-full bg-white/8 blur-3xl" />
-        <div className="absolute top-1/4 right-1/3 w-20 h-20 rounded-full bg-white/[0.04]" />
         <div
           className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "28px 28px",
-          }}
+          style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "28px 28px" }}
         />
       </div>
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-8 text-white">
@@ -271,21 +271,19 @@ function CardShell({
 function BrandContent({ brand }: { brand: Brand }) {
   return (
     <CardShell gradient={brand.gradient.bg} glow={brand.gradient.glow}>
-      <div className="text-[88px] mb-2 drop-shadow-lg">
-        {brand.emoji}
-      </div>
-      <h2 className="text-[30px] font-black text-center leading-tight drop-shadow-sm">
-        {brand.name}
-      </h2>
+      <div className="text-[88px] mb-2 drop-shadow-lg">{brand.emoji}</div>
+      <h2 className="text-[30px] font-black text-center leading-tight drop-shadow-sm">{brand.name}</h2>
       <div className="flex items-center gap-2 mt-3">
         <span className="px-3.5 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-[12px] font-bold border border-white/20 flex items-center gap-1.5">
           <GiftIcon className="w-3 h-3" />
           {brand.giftCount} hediye
         </span>
       </div>
-      <p className="text-white/40 text-[13px] mt-6 text-center">
-        Saga kaydir → urunleri kesfet
-      </p>
+      <div className="flex items-center gap-1 mt-6 text-white/40 text-[13px]">
+        <span>Saga kaydir</span>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span>urunleri kesfet</span>
+      </div>
     </CardShell>
   );
 }
@@ -294,25 +292,15 @@ function ProductContent({ gift }: { gift: Gift }) {
   const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
   return (
     <CardShell gradient={colors.bg} glow={colors.glow}>
-      <div className="text-[88px] mb-2 drop-shadow-lg">
-        {gift.image}
-      </div>
-      <h2 className="text-[26px] font-black text-center leading-tight drop-shadow-sm">
-        {gift.name}
-      </h2>
-      <p className="text-white/70 text-[14px] font-semibold mt-1">
-        {gift.partnerName}
-      </p>
-      <div className="flex items-center gap-2 mt-3">
+      <div className="text-[88px] mb-2 drop-shadow-lg">{gift.image}</div>
+      <h2 className="text-[26px] font-black text-center leading-tight drop-shadow-sm">{gift.name}</h2>
+      <p className="text-white/70 text-[14px] font-semibold mt-1">{gift.partnerName}</p>
+      <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
         {gift.isPremium && (
-          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-bold border border-white/20">
-            PRO
-          </span>
+          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-bold border border-white/20">PRO</span>
         )}
         {gift.sponsorName && (
-          <span className="px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-[11px] font-semibold border border-white/15">
-            {gift.sponsorName}
-          </span>
+          <span className="px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-[11px] font-semibold border border-white/15">{gift.sponsorName}</span>
         )}
         <span className="px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-[11px] font-semibold border border-white/15">
           {gift.stock > 10 ? "Stokta" : gift.stock > 0 ? `Son ${gift.stock}` : "Tukendi"}
@@ -325,15 +313,7 @@ function ProductContent({ gift }: { gift: Gift }) {
   );
 }
 
-function MiniCardContent({
-  gradient,
-  emoji,
-  label,
-}: {
-  gradient: string;
-  emoji: string;
-  label: string;
-}) {
+function MiniCardContent({ gradient, emoji, label }: { gradient: string; emoji: string; label: string }) {
   return (
     <div className="relative w-full h-full rounded-[28px] overflow-hidden shadow-lg">
       <div className={cn("absolute inset-0 bg-gradient-to-br opacity-80", gradient)} />
@@ -346,33 +326,24 @@ function MiniCardContent({
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DOT INDICATORS
+   DOT INDICATORS — pure CSS, no framer-motion layout
    ═══════════════════════════════════════════════════════════════ */
 
-/* Horizontal dots — bottom (for PRODUCT index only) */
 function HorizontalDots({ total, current }: { total: number; current: number }) {
   if (total <= 1) return null;
-  const maxDots = 7;
-  const halfWindow = Math.floor(maxDots / 2);
-  let start = Math.max(0, current - halfWindow);
-  const end = Math.min(total, start + maxDots);
-  if (end - start < maxDots) start = Math.max(0, end - maxDots);
-
   return (
-    <div className="flex items-center gap-[6px]">
-      {Array.from({ length: end - start }, (_, i) => {
-        const idx = start + i;
+    <div className="flex items-center justify-center gap-[6px]">
+      {Array.from({ length: total }, (_, idx) => {
         const isActive = idx === current;
-        const distance = Math.abs(idx - current);
         return (
           <div
             key={idx}
-            className="rounded-full transition-all duration-500 ease-out"
             style={{
               width: isActive ? 24 : 8,
               height: 8,
-              backgroundColor: isActive ? "var(--color-primary, #E8364F)" : distance <= 1 ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.1)",
-              transform: `scale(${isActive ? 1 : distance <= 1 ? 0.9 : 0.7})`,
+              borderRadius: 4,
+              backgroundColor: isActive ? "var(--color-primary, #E8364F)" : "rgba(0,0,0,0.15)",
+              transition: "all 0.6s cubic-bezier(0.25, 1, 0.5, 1)",
             }}
           />
         );
@@ -381,34 +352,21 @@ function HorizontalDots({ total, current }: { total: number; current: number }) 
   );
 }
 
-/* Vertical dots — right side (Apple Smart Stack style, for BRAND index) */
 function VerticalDots({ total, current }: { total: number; current: number }) {
   if (total <= 1) return null;
-  const maxDots = 7;
-  const halfWindow = Math.floor(maxDots / 2);
-  let start = Math.max(0, current - halfWindow);
-  const end = Math.min(total, start + maxDots);
-  if (end - start < maxDots) start = Math.max(0, end - maxDots);
-
   return (
     <div className="absolute right-[-20px] top-1/2 -translate-y-1/2 flex flex-col items-center gap-[5px] z-[60]">
-      {Array.from({ length: end - start }, (_, i) => {
-        const idx = start + i;
+      {Array.from({ length: total }, (_, idx) => {
         const isActive = idx === current;
-        const distance = Math.abs(idx - current);
         return (
           <div
             key={idx}
-            className="rounded-full transition-all duration-500 ease-out"
             style={{
               width: 6,
               height: isActive ? 20 : 6,
-              backgroundColor: isActive
-                ? "var(--color-primary, #E8364F)"
-                : distance <= 1
-                  ? "rgba(0,0,0,0.25)"
-                  : "rgba(0,0,0,0.1)",
-              transform: `scale(${isActive ? 1 : distance <= 1 ? 0.9 : 0.7})`,
+              borderRadius: 3,
+              backgroundColor: isActive ? "var(--color-primary, #E8364F)" : "rgba(0,0,0,0.15)",
+              transition: "all 0.6s cubic-bezier(0.25, 1, 0.5, 1)",
             }}
           />
         );
@@ -418,17 +376,9 @@ function VerticalDots({ total, current }: { total: number; current: number }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   LEVEL BREADCRUMB
+   BREADCRUMB
    ═══════════════════════════════════════════════════════════════ */
-function LevelBreadcrumb({
-  level,
-  brandName,
-  onBack,
-}: {
-  level: "brands" | "products";
-  brandName?: string;
-  onBack: () => void;
-}) {
+function LevelBreadcrumb({ level, brandName, onBack }: { level: "brands" | "products"; brandName?: string; onBack: () => void }) {
   return (
     <div className="flex items-center gap-2 mb-4 h-8">
       {level === "products" ? (
@@ -448,6 +398,30 @@ function LevelBreadcrumb({
           Markalari Kesfet
         </div>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STACK CARD WRAPPER — pure CSS, only Y transform (no X shift)
+   ═══════════════════════════════════════════════════════════════ */
+function StackCardCSS({ index, children }: { index: number; children: React.ReactNode }) {
+  const scale = 1 - (index + 1) * 0.05;
+  const yOffset = (index + 1) * 12;
+  const opacity = index === 0 ? 0.85 : index === 1 ? 0.55 : 0.3;
+
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        transform: `translateY(${yOffset}px) scale(${scale})`,
+        opacity,
+        zIndex: 40 - index,
+        transition: "transform 0.9s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.9s cubic-bezier(0.25, 1, 0.5, 1)",
+        transformOrigin: "center top",
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -473,10 +447,10 @@ export default function SwipeableCardStack({
   const [productIndex, setProductIndex] = useState(0);
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [verticalAnimating, setVerticalAnimating] = useState(false);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
   const touchHandled = useRef(false);
+  const verticalLock = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   /* ── Derive brands ── */
@@ -499,46 +473,46 @@ export default function SwipeableCardStack({
     }));
   }, [gifts]);
 
-  /* ── Products for brand ── */
+  /* ── Products for selected brand ── */
   const brandProducts = useMemo(() => {
     if (!selectedBrandId) return [];
     return gifts.filter((g) => g.partnerId === selectedBrandId);
   }, [gifts, selectedBrandId]);
 
-  /* ── Apple Smart Stack: Vertical navigation with debounce ── */
+  /* ═══════════════════════════════════════════════════════════════
+     VERTICAL NAVIGATION — ALWAYS changes BRAND, never product
+
+     Marka seviyesinde: markalar arasi gec
+     Urun seviyesinde: markalara geri don
+     ═══════════════════════════════════════════════════════════════ */
   const goVertical = useCallback(
     (direction: "up" | "down") => {
-      if (isAnimating || verticalAnimating) return;
+      if (isAnimating || verticalLock.current) return;
 
       if (level === "brands") {
+        // Markalar arasi gecis
         const maxIdx = brands.length - 1;
         if (direction === "up" && brandIndex < maxIdx) {
-          setVerticalAnimating(true);
+          verticalLock.current = true;
           setBrandIndex((i) => i + 1);
-          setTimeout(() => setVerticalAnimating(false), 700); // match slow transition
+          setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
         } else if (direction === "down" && brandIndex > 0) {
-          setVerticalAnimating(true);
+          verticalLock.current = true;
           setBrandIndex((i) => i - 1);
-          setTimeout(() => setVerticalAnimating(false), 700);
+          setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
         }
       } else {
-        const maxIdx = brandProducts.length - 1;
-        if (direction === "up" && productIndex < maxIdx) {
-          setVerticalAnimating(true);
-          setProductIndex((i) => i + 1);
-          setTimeout(() => setVerticalAnimating(false), 700);
-        } else if (direction === "down" && productIndex > 0) {
-          setVerticalAnimating(true);
-          setProductIndex((i) => i - 1);
-          setTimeout(() => setVerticalAnimating(false), 700);
-        }
+        // Urun seviyesinde dikey = markalara geri don
+        verticalLock.current = true;
+        backToBrands();
+        setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
       }
     },
-    [isAnimating, verticalAnimating, level, brands.length, brandIndex, brandProducts.length, productIndex]
+    [isAnimating, level, brands.length, brandIndex]
   );
 
   /* ═══════════════════════════════════════════════════════════════
-     TOUCH HANDLING — Vertical only, horizontal goes to framer-motion
+     TOUCH HANDLING
      ═══════════════════════════════════════════════════════════════ */
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -555,7 +529,8 @@ export default function SwipeableCardStack({
     const absDy = Math.abs(dy);
     const absDx = Math.abs(dx);
 
-    if (absDy > VERTICAL_DRAG_THRESHOLD && absDy > absDx * 1.5) {
+    // Sadece net dikey hareket varsa yakala, yatay framer-motion'a kalsin
+    if (absDy > VERTICAL_DRAG_THRESHOLD && absDy > absDx * 1.8) {
       touchHandled.current = true;
       goVertical(dy > 0 ? "up" : "down");
     }
@@ -564,14 +539,14 @@ export default function SwipeableCardStack({
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
-      if (Math.abs(e.deltaY) > 25) {
+      if (Math.abs(e.deltaY) > 30) {
         goVertical(e.deltaY > 0 ? "up" : "down");
       }
     },
     [goVertical]
   );
 
-  /* ── Prevent default on container for native touchmove ── */
+  /* ── Native touchmove preventDefault ── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -580,14 +555,16 @@ export default function SwipeableCardStack({
     return () => { el.removeEventListener("touchmove", preventScroll); };
   }, []);
 
-  /* ── Level transitions ── */
+  /* ═══════════════════════════════════════════════════════════════
+     LEVEL TRANSITIONS
+     ═══════════════════════════════════════════════════════════════ */
   const enterBrand = useCallback((brand: Brand) => {
     setIsAnimating(true);
     setSelectedBrandId(brand.id);
     setProductIndex(0);
     setTimeout(() => {
       setLevel("products");
-      setTimeout(() => setIsAnimating(false), 500);
+      setTimeout(() => setIsAnimating(false), 600);
     }, 50);
   }, []);
 
@@ -595,10 +572,15 @@ export default function SwipeableCardStack({
     setIsAnimating(true);
     setLevel("brands");
     setSelectedBrandId(null);
-    setTimeout(() => setIsAnimating(false), 500);
+    setProductIndex(0);
+    setTimeout(() => setIsAnimating(false), 600);
   }, []);
 
-  /* ── Swipe handlers ── */
+  /* ═══════════════════════════════════════════════════════════════
+     SWIPE HANDLERS
+     ═══════════════════════════════════════════════════════════════ */
+
+  // -- BRANDS --
   const handleBrandSwipeRight = useCallback(
     (idx: number) => {
       const brand = brands[idx];
@@ -608,13 +590,16 @@ export default function SwipeableCardStack({
   );
 
   const handleBrandSwipeLeft = useCallback(() => {
+    // Sola kaydir = sonraki marka
     if (brandIndex < brands.length - 1) {
       setBrandIndex((i) => i + 1);
     }
   }, [brandIndex, brands.length]);
 
+  // -- PRODUCTS --
   const handleProductSwipeRight = useCallback(
     (idx: number) => {
+      // Saga kaydir = GONDER
       const gift = brandProducts[idx];
       if (gift && !disabled) onSwipeRight(gift);
     },
@@ -622,8 +607,14 @@ export default function SwipeableCardStack({
   );
 
   const handleProductSwipeLeft = useCallback(() => {
-    backToBrands();
-  }, [backToBrands]);
+    // Sola kaydir = sonraki urun. Son urundeyse markalara don.
+    if (productIndex < brandProducts.length - 1) {
+      setProductIndex((i) => i + 1);
+    } else {
+      // Son urun — markalara geri don
+      backToBrands();
+    }
+  }, [productIndex, brandProducts.length, backToBrands]);
 
   /* ── Button swipe triggers ── */
   const triggerButtonSwipe = useCallback((direction: "left" | "right") => {
@@ -633,13 +624,9 @@ export default function SwipeableCardStack({
     }
   }, []);
 
-  /* ── Current items and visible stack ── */
-  const currentBrandItems = brands;
-  const currentProductItems = brandProducts;
-
-  const visibleBrands = currentBrandItems.slice(brandIndex, brandIndex + MAX_VISIBLE);
-  const visibleProducts = currentProductItems.slice(productIndex, productIndex + MAX_VISIBLE);
-
+  /* ── Visible stacks ── */
+  const visibleBrands = brands.slice(brandIndex, brandIndex + MAX_VISIBLE);
+  const visibleProducts = brandProducts.slice(productIndex, productIndex + MAX_VISIBLE);
   const selectedBrand = brands.find((b) => b.id === selectedBrandId);
 
   /* ── Empty state ── */
@@ -662,7 +649,7 @@ export default function SwipeableCardStack({
       {/* ── CARD STACK AREA ── */}
       <div className="relative w-full" style={{ maxWidth: "340px", margin: "0 auto" }}>
         <div className="relative" style={{ height: "420px" }}>
-          {/* Vertical dots — only show brand count, always tracks brandIndex */}
+          {/* Vertical dots — always shows BRANDS */}
           <VerticalDots total={brands.length} current={brandIndex} />
 
           <div
@@ -674,32 +661,13 @@ export default function SwipeableCardStack({
             onWheel={handleWheel}
           >
             {level === "brands" ? (
-              /* ═══ BRANDS LAYER ═══ */
-              <div className="absolute inset-0" key="brands-layer">
-                {/* Stack cards behind — NO framer-motion to avoid jitter */}
-                {visibleBrands.slice(1).map((brand, i) => {
-                  const scale = 1 - (i + 1) * 0.05;
-                  const yOffset = (i + 1) * 12;
-                  const opacity = i === 0 ? 0.9 : i === 1 ? 0.6 : 0.3;
-                  return (
-                    <div
-                      key={`bs-${brand.id}`}
-                      className="absolute inset-0 transition-all duration-700 ease-out"
-                      style={{
-                        transform: `scale(${scale}) translateY(${yOffset}px)`,
-                        opacity,
-                        zIndex: 40 - i,
-                      }}
-                    >
-                      <MiniCardContent
-                        gradient={brand.gradient.bg}
-                        emoji={brand.emoji}
-                        label={brand.name}
-                      />
-                    </div>
-                  );
-                })}
-                {/* Top card — Tinder draggable */}
+              /* ═══════ BRANDS LAYER ═══════ */
+              <div className="absolute inset-0">
+                {visibleBrands.slice(1).map((brand, i) => (
+                  <StackCardCSS key={`bs-${brand.id}`} index={i}>
+                    <MiniCardContent gradient={brand.gradient.bg} emoji={brand.emoji} label={brand.name} />
+                  </StackCardCSS>
+                ))}
                 {visibleBrands[0] && (
                   <TinderCard
                     key={`bt-${visibleBrands[0].id}-${brandIndex}`}
@@ -717,33 +685,16 @@ export default function SwipeableCardStack({
                 )}
               </div>
             ) : (
-              /* ═══ PRODUCTS LAYER ═══ */
-              <div className="absolute inset-0" key="products-layer">
-                {/* Stack cards behind */}
+              /* ═══════ PRODUCTS LAYER ═══════ */
+              <div className="absolute inset-0">
                 {visibleProducts.slice(1).map((gift, i) => {
                   const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
-                  const scale = 1 - (i + 1) * 0.05;
-                  const yOffset = (i + 1) * 12;
-                  const opacity = i === 0 ? 0.9 : i === 1 ? 0.6 : 0.3;
                   return (
-                    <div
-                      key={`ps-${gift.id}`}
-                      className="absolute inset-0 transition-all duration-700 ease-out"
-                      style={{
-                        transform: `scale(${scale}) translateY(${yOffset}px)`,
-                        opacity,
-                        zIndex: 40 - i,
-                      }}
-                    >
-                      <MiniCardContent
-                        gradient={colors.bg}
-                        emoji={gift.image}
-                        label={gift.name}
-                      />
-                    </div>
+                    <StackCardCSS key={`ps-${gift.id}`} index={i}>
+                      <MiniCardContent gradient={colors.bg} emoji={gift.image} label={gift.name} />
+                    </StackCardCSS>
                   );
                 })}
-                {/* Top card */}
                 {visibleProducts[0] && (
                   <TinderCard
                     key={`pt-${visibleProducts[0].id}-${productIndex}`}
@@ -751,9 +702,9 @@ export default function SwipeableCardStack({
                     onSwipeLeft={handleProductSwipeLeft}
                     disabled={disabled}
                     rightLabel="GONDER"
-                    leftLabel="GERI"
+                    leftLabel="SONRAKI"
                     rightIcon={Send}
-                    leftIcon={ArrowLeft}
+                    leftIcon={ChevronRight}
                     rightColor="emerald"
                     leftColor="orange"
                   >
@@ -766,10 +717,15 @@ export default function SwipeableCardStack({
         </div>
       </div>
 
-      {/* ── HORIZONTAL DOTS — Bottom, only for products ── */}
-      <div className="mt-4 h-3">
-        {level === "products" && (
+      {/* ── HORIZONTAL DOTS — product index, always visible at product level ── */}
+      <div className="mt-4 flex items-center justify-center" style={{ minHeight: 12 }}>
+        {level === "products" ? (
           <HorizontalDots total={brandProducts.length} current={productIndex} />
+        ) : (
+          /* Brand level: show brand count as small label */
+          <span className="text-[11px] text-muted/30 font-semibold">
+            {brandIndex + 1} / {brands.length}
+          </span>
         )}
       </div>
 
@@ -779,16 +735,16 @@ export default function SwipeableCardStack({
           <>
             <button
               onClick={() => triggerButtonSwipe("left")}
-              className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-all active:scale-90"
+              className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-transform active:scale-90"
             >
-              <ArrowLeft className="w-5 h-5 text-orange-400" />
+              <ChevronRight className="w-5 h-5 text-orange-400 rotate-180" />
             </button>
 
             <button
               onClick={() => triggerButtonSwipe("right")}
               disabled={disabled}
               className={cn(
-                "w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90",
+                "w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl transition-transform active:scale-90",
                 disabled
                   ? "bg-muted/30 cursor-not-allowed"
                   : "bg-gradient-to-br from-primary to-pink-500 shadow-primary/30 hover:shadow-primary/50"
@@ -797,9 +753,7 @@ export default function SwipeableCardStack({
               <Send className="w-7 h-7 text-white" />
             </button>
 
-            <button
-              className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-all active:scale-90"
-            >
+            <button className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-transform active:scale-90">
               <Heart className="w-5 h-5 text-purple-400" />
             </button>
           </>
@@ -807,21 +761,19 @@ export default function SwipeableCardStack({
           <>
             <button
               onClick={() => triggerButtonSwipe("left")}
-              className="w-14 h-14 rounded-full bg-white border-2 border-red-200 flex items-center justify-center shadow-lg shadow-red-100/50 transition-all active:scale-90"
+              className="w-14 h-14 rounded-full bg-white border-2 border-red-200 flex items-center justify-center shadow-lg shadow-red-100/50 transition-transform active:scale-90"
             >
               <X className="w-5 h-5 text-red-400" />
             </button>
 
             <button
               onClick={() => triggerButtonSwipe("right")}
-              className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-all active:scale-90"
+              className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-transform active:scale-90"
             >
               <Store className="w-7 h-7 text-white" />
             </button>
 
-            <button
-              className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-all active:scale-90"
-            >
+            <button className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-transform active:scale-90">
               <Heart className="w-5 h-5 text-purple-400" />
             </button>
           </>
@@ -832,7 +784,7 @@ export default function SwipeableCardStack({
       <div className="flex items-center justify-center gap-8 mt-2.5">
         {level === "products" ? (
           <>
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Geri</span>
+            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Sonraki</span>
             <span className="text-[11px] text-muted/50 font-bold w-[72px] text-center">Gonder</span>
             <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Favori</span>
           </>
