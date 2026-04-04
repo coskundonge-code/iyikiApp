@@ -6,7 +6,6 @@ import {
   useMotionValue,
   useTransform,
   useAnimation,
-  AnimatePresence,
   type PanInfo,
 } from "framer-motion";
 import {
@@ -22,25 +21,18 @@ import type { Gift } from "@/types";
 
 /* ═══════════════════════════════════════════════════════════════
    TINDER + APPLE SMART STACK — PROFESSIONAL CARD STACK
-
-   Research-based animation values:
-   - Tinder: rotation -45°/+45°, scale 0.95→1.0 reveal,
-     velocity threshold 400px/s, throw exit 1500px
-   - Apple Smart Stack: 12px vertical offset per card,
-     spring-based slide, depth parallax via scale
+   v3: Smooth transitions, no jitter, correct dot behavior
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Constants ── */
-const SWIPE_VELOCITY_THRESHOLD = 400;   // px/s — fast flick completes swipe
-const SWIPE_POSITION_THRESHOLD = 80;    // px — drag distance completes swipe
-const THROW_DISTANCE = 1500;            // px — how far card flies off
-const ROTATION_RANGE = 35;              // degrees — max rotation on full drag
-const THROW_DURATION = 0.8;             // seconds — slow throw for visibility
-const SNAPBACK_STIFFNESS = 300;         // spring snap-back
-const SNAPBACK_DAMPING = 22;            // spring snap-back damping
+const SWIPE_VELOCITY_THRESHOLD = 350;
+const SWIPE_POSITION_THRESHOLD = 70;
+const THROW_DISTANCE = 1500;
+const ROTATION_RANGE = 30;
+const THROW_DURATION = 1.0;             // SLOWER throw for visibility
 
-const VERTICAL_DRAG_THRESHOLD = 30;     // px — vertical swipe distance
-const MAX_VISIBLE = 3;                  // visible cards in stack
+const VERTICAL_DRAG_THRESHOLD = 30;
+const MAX_VISIBLE = 3;
 
 /* ── Brand gradients ── */
 const BRAND_GRADIENTS: Record<string, { bg: string; glow: string }> = {
@@ -103,71 +95,61 @@ function TinderCard({
   const controls = useAnimation();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // ── Tinder transforms ──
   const rotate = useTransform(x, [-200, 0, 200], [-ROTATION_RANGE, 0, ROTATION_RANGE]);
-
-  // Stamp opacity: fade in as you drag
   const rightStampOpacity = useTransform(x, [0, 30, 80], [0, 0.3, 1]);
   const leftStampOpacity = useTransform(x, [-80, -30, 0], [1, 0.3, 0]);
-
-  // Background tint
   const rightTint = useTransform(x, [0, 120], ["rgba(16,185,129,0)", "rgba(16,185,129,0.1)"]);
   const leftTint = useTransform(x, [-120, 0], ["rgba(239,68,68,0.1)", "rgba(239,68,68,0)"]);
 
   const handleDragEnd = async (_: unknown, info: PanInfo) => {
     if (disabled) {
-      await controls.start({ x: 0, transition: { type: "spring", stiffness: 400, damping: 28 } });
+      await controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 25 } });
       return;
     }
 
     const { offset, velocity } = info;
-    // Check both position AND velocity for swipe detection
     const swipeRight =
       offset.x > SWIPE_POSITION_THRESHOLD ||
-      (velocity.x > SWIPE_VELOCITY_THRESHOLD && offset.x > 20);
+      (velocity.x > SWIPE_VELOCITY_THRESHOLD && offset.x > 15);
     const swipeLeft =
       offset.x < -SWIPE_POSITION_THRESHOLD ||
-      (velocity.x < -SWIPE_VELOCITY_THRESHOLD && offset.x < -20);
+      (velocity.x < -SWIPE_VELOCITY_THRESHOLD && offset.x < -15);
 
     if (swipeRight) {
-      // Throw card to the right — SLOW for visibility
       await controls.start({
         x: THROW_DISTANCE,
-        rotate: ROTATION_RANGE + 15,
+        rotate: ROTATION_RANGE + 10,
         opacity: 0,
-        transition: { duration: THROW_DURATION, ease: [0.25, 0.46, 0.45, 0.94] },
+        transition: { duration: THROW_DURATION, ease: [0.16, 1, 0.3, 1] },
       });
       onSwipeRight();
     } else if (swipeLeft) {
-      // Throw card to the left — SLOW for visibility
       await controls.start({
         x: -THROW_DISTANCE,
-        rotate: -(ROTATION_RANGE + 15),
+        rotate: -(ROTATION_RANGE + 10),
         opacity: 0,
-        transition: { duration: THROW_DURATION, ease: [0.25, 0.46, 0.45, 0.94] },
+        transition: { duration: THROW_DURATION, ease: [0.16, 1, 0.3, 1] },
       });
       onSwipeLeft();
     } else {
-      // Snap back with elastic spring — gentle
       await controls.start({
         x: 0,
         rotate: 0,
         opacity: 1,
-        transition: { type: "spring", stiffness: SNAPBACK_STIFFNESS, damping: SNAPBACK_DAMPING, mass: 1 },
+        transition: { type: "spring", stiffness: 200, damping: 20, mass: 1.2 },
       });
     }
   };
 
-  // Programmatic swipe (button click)
   const triggerSwipe = useCallback(
     async (direction: "left" | "right") => {
       if (disabled && direction === "right") return;
       const dir = direction === "right" ? 1 : -1;
       await controls.start({
         x: dir * THROW_DISTANCE,
-        rotate: dir * (ROTATION_RANGE + 15),
+        rotate: dir * (ROTATION_RANGE + 10),
         opacity: 0,
-        transition: { duration: THROW_DURATION * 1.1, ease: [0.25, 0.46, 0.45, 0.94] },
+        transition: { duration: THROW_DURATION * 1.1, ease: [0.16, 1, 0.3, 1] },
       });
       if (direction === "right") onSwipeRight();
       else onSwipeLeft();
@@ -175,7 +157,6 @@ function TinderCard({
     [controls, disabled, onSwipeRight, onSwipeLeft]
   );
 
-  // Expose triggerSwipe via ref-like pattern
   useEffect(() => {
     if (cardRef.current) {
       (cardRef.current as HTMLDivElement & { triggerSwipe?: typeof triggerSwipe }).triggerSwipe = triggerSwipe;
@@ -186,22 +167,22 @@ function TinderCard({
     <motion.div
       ref={cardRef}
       data-tinder-card
-      className="absolute inset-0 cursor-grab active:cursor-grabbing will-change-transform"
+      className="absolute inset-0 cursor-grab active:cursor-grabbing"
       style={{
         x,
         rotate,
         zIndex: 50,
-        touchAction: "none",           // ← CRITICAL: prevent browser scroll
+        touchAction: "none",
+        willChange: "transform",
       }}
       drag={disabled ? false : "x"}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.85}               // ← More elastic = easier to drag far
-      dragMomentum={false}             // ← We handle momentum in onDragEnd
+      dragElastic={0.9}
+      dragMomentum={false}
       onDragEnd={handleDragEnd}
       animate={controls}
-      initial={{ scale: 1, opacity: 1 }}
+      initial={{ scale: 1, opacity: 1, x: 0 }}
     >
-      {/* Direction tint overlays */}
       <motion.div
         className="absolute inset-0 rounded-[28px] z-[5] pointer-events-none"
         style={{ backgroundColor: rightTint }}
@@ -213,7 +194,6 @@ function TinderCard({
 
       {children}
 
-      {/* ── STAMPS (Tinder-style verdict labels) ── */}
       {/* Right stamp */}
       <motion.div
         className="absolute top-8 left-6 z-20 pointer-events-none"
@@ -249,40 +229,6 @@ function TinderCard({
           </span>
         </div>
       </motion.div>
-    </motion.div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   STACK CARD — Behind the top card, scales up as top is dragged
-   ═══════════════════════════════════════════════════════════════ */
-function StackCard({
-  children,
-  index,
-}: {
-  children: React.ReactNode;
-  index: number; // 0 = directly behind top, 1 = next, ...
-  total?: number;
-}) {
-  const scale = 1 - (index + 1) * 0.05;
-  const yOffset = (index + 1) * 12;
-  const opacity = index === 0 ? 0.95 : index === 1 ? 0.7 : 0.4;
-
-  return (
-    <motion.div
-      className="absolute inset-0 will-change-transform"
-      style={{ zIndex: 40 - index }}
-      initial={false}
-      animate={{ scale, y: yOffset, opacity }}
-      transition={{
-        type: "spring",
-        stiffness: 200,
-        damping: 22,
-        mass: 1,
-        duration: 0.6,
-      }}
-    >
-      {children}
     </motion.div>
   );
 }
@@ -325,13 +271,9 @@ function CardShell({
 function BrandContent({ brand }: { brand: Brand }) {
   return (
     <CardShell gradient={brand.gradient.bg} glow={brand.gradient.glow}>
-      <motion.div
-        className="text-[88px] mb-2 drop-shadow-lg"
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-      >
+      <div className="text-[88px] mb-2 drop-shadow-lg">
         {brand.emoji}
-      </motion.div>
+      </div>
       <h2 className="text-[30px] font-black text-center leading-tight drop-shadow-sm">
         {brand.name}
       </h2>
@@ -352,13 +294,9 @@ function ProductContent({ gift }: { gift: Gift }) {
   const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
   return (
     <CardShell gradient={colors.bg} glow={colors.glow}>
-      <motion.div
-        className="text-[88px] mb-2 drop-shadow-lg"
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      >
+      <div className="text-[88px] mb-2 drop-shadow-lg">
         {gift.image}
-      </motion.div>
+      </div>
       <h2 className="text-[26px] font-black text-center leading-tight drop-shadow-sm">
         {gift.name}
       </h2>
@@ -387,7 +325,6 @@ function ProductContent({ gift }: { gift: Gift }) {
   );
 }
 
-/* Mini card content for stack behind */
 function MiniCardContent({
   gradient,
   emoji,
@@ -412,6 +349,7 @@ function MiniCardContent({
    DOT INDICATORS
    ═══════════════════════════════════════════════════════════════ */
 
+/* Horizontal dots — bottom (for PRODUCT index only) */
 function HorizontalDots({ total, current }: { total: number; current: number }) {
   if (total <= 1) return null;
   const maxDots = 7;
@@ -427,17 +365,15 @@ function HorizontalDots({ total, current }: { total: number; current: number }) 
         const isActive = idx === current;
         const distance = Math.abs(idx - current);
         return (
-          <motion.div
+          <div
             key={idx}
-            layout
-            className="rounded-full"
-            animate={{
+            className="rounded-full transition-all duration-500 ease-out"
+            style={{
               width: isActive ? 24 : 8,
               height: 8,
               backgroundColor: isActive ? "var(--color-primary, #E8364F)" : distance <= 1 ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.1)",
-              scale: isActive ? 1 : distance <= 1 ? 0.9 : 0.7,
+              transform: `scale(${isActive ? 1 : distance <= 1 ? 0.9 : 0.7})`,
             }}
-            transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.5 }}
           />
         );
       })}
@@ -445,6 +381,7 @@ function HorizontalDots({ total, current }: { total: number; current: number }) 
   );
 }
 
+/* Vertical dots — right side (Apple Smart Stack style, for BRAND index) */
 function VerticalDots({ total, current }: { total: number; current: number }) {
   if (total <= 1) return null;
   const maxDots = 7;
@@ -460,11 +397,10 @@ function VerticalDots({ total, current }: { total: number; current: number }) {
         const isActive = idx === current;
         const distance = Math.abs(idx - current);
         return (
-          <motion.div
+          <div
             key={idx}
-            layout
-            className="rounded-full"
-            animate={{
+            className="rounded-full transition-all duration-500 ease-out"
+            style={{
               width: 6,
               height: isActive ? 20 : 6,
               backgroundColor: isActive
@@ -472,9 +408,8 @@ function VerticalDots({ total, current }: { total: number; current: number }) {
                 : distance <= 1
                   ? "rgba(0,0,0,0.25)"
                   : "rgba(0,0,0,0.1)",
-              scale: isActive ? 1 : distance <= 1 ? 0.9 : 0.7,
+              transform: `scale(${isActive ? 1 : distance <= 1 ? 0.9 : 0.7})`,
             }}
-            transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.5 }}
           />
         );
       })}
@@ -495,36 +430,25 @@ function LevelBreadcrumb({
   onBack: () => void;
 }) {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={level}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 8 }}
-        transition={{ duration: 0.35 }}
-        className="flex items-center gap-2 mb-4 h-8"
-      >
-        {level === "products" ? (
-          <>
-            <motion.button
-              onClick={onBack}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-border/50 shadow-sm text-[12px] font-bold text-muted hover:text-foreground transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Markalar
-            </motion.button>
-            <span className="text-[12px] font-bold text-foreground">› {brandName}</span>
-          </>
-        ) : (
-          <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 text-[12px] font-bold text-primary">
-            <Store className="w-3.5 h-3.5" />
-            Markalari Kesfet
-          </div>
-        )}
-      </motion.div>
-    </AnimatePresence>
+    <div className="flex items-center gap-2 mb-4 h-8">
+      {level === "products" ? (
+        <>
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-sm border border-border/50 shadow-sm text-[12px] font-bold text-muted hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Markalar
+          </button>
+          <span className="text-[12px] font-bold text-foreground">› {brandName}</span>
+        </>
+      ) : (
+        <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 text-[12px] font-bold text-primary">
+          <Store className="w-3.5 h-3.5" />
+          Markalari Kesfet
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -581,35 +505,40 @@ export default function SwipeableCardStack({
     return gifts.filter((g) => g.partnerId === selectedBrandId);
   }, [gifts, selectedBrandId]);
 
-  const currentItems = level === "brands" ? brands : brandProducts;
-  const currentIndex = level === "brands" ? brandIndex : productIndex;
-  const setCurrentIndex = level === "brands" ? setBrandIndex : setProductIndex;
-
-  /* ── Apple Smart Stack: Vertical navigation with animation lock ── */
+  /* ── Apple Smart Stack: Vertical navigation with debounce ── */
   const goVertical = useCallback(
     (direction: "up" | "down") => {
       if (isAnimating || verticalAnimating) return;
-      const maxIdx = currentItems.length - 1;
-      if (direction === "up" && currentIndex < maxIdx) {
-        setVerticalAnimating(true);
-        setCurrentIndex((i) => i + 1);
-        setTimeout(() => setVerticalAnimating(false), 500);
-      } else if (direction === "down" && currentIndex > 0) {
-        setVerticalAnimating(true);
-        setCurrentIndex((i) => i - 1);
-        setTimeout(() => setVerticalAnimating(false), 500);
+
+      if (level === "brands") {
+        const maxIdx = brands.length - 1;
+        if (direction === "up" && brandIndex < maxIdx) {
+          setVerticalAnimating(true);
+          setBrandIndex((i) => i + 1);
+          setTimeout(() => setVerticalAnimating(false), 700); // match slow transition
+        } else if (direction === "down" && brandIndex > 0) {
+          setVerticalAnimating(true);
+          setBrandIndex((i) => i - 1);
+          setTimeout(() => setVerticalAnimating(false), 700);
+        }
+      } else {
+        const maxIdx = brandProducts.length - 1;
+        if (direction === "up" && productIndex < maxIdx) {
+          setVerticalAnimating(true);
+          setProductIndex((i) => i + 1);
+          setTimeout(() => setVerticalAnimating(false), 700);
+        } else if (direction === "down" && productIndex > 0) {
+          setVerticalAnimating(true);
+          setProductIndex((i) => i - 1);
+          setTimeout(() => setVerticalAnimating(false), 700);
+        }
       }
     },
-    [isAnimating, verticalAnimating, currentItems.length, currentIndex, setCurrentIndex]
+    [isAnimating, verticalAnimating, level, brands.length, brandIndex, brandProducts.length, productIndex]
   );
 
   /* ═══════════════════════════════════════════════════════════════
-     TOUCH HANDLING — Unified gesture detection
-
-     Key fix: We use touchStart to record origin, touchMove to detect
-     direction intent (vertical vs horizontal), and preventDefault to
-     stop page scrolling. Only vertical gestures are handled here;
-     horizontal ones are left to framer-motion's drag system.
+     TOUCH HANDLING — Vertical only, horizontal goes to framer-motion
      ═══════════════════════════════════════════════════════════════ */
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -618,9 +547,7 @@ export default function SwipeableCardStack({
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    // Always prevent default to stop page scrolling in the card area
     e.preventDefault();
-
     if (touchHandled.current) return;
 
     const dy = touchStartY.current - e.touches[0].clientY;
@@ -628,12 +555,10 @@ export default function SwipeableCardStack({
     const absDy = Math.abs(dy);
     const absDx = Math.abs(dx);
 
-    // Only handle vertical if clearly vertical intent (more Y than X by 1.5x)
     if (absDy > VERTICAL_DRAG_THRESHOLD && absDy > absDx * 1.5) {
       touchHandled.current = true;
       goVertical(dy > 0 ? "up" : "down");
     }
-    // Horizontal gestures are handled by framer-motion drag — do nothing
   }, [goVertical]);
 
   const handleWheel = useCallback(
@@ -646,17 +571,13 @@ export default function SwipeableCardStack({
     [goVertical]
   );
 
-  /* ── Prevent default on the container for touchmove (native) ── */
+  /* ── Prevent default on container for native touchmove ── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const preventScroll = (e: TouchEvent) => {
-      e.preventDefault();
-    };
+    const preventScroll = (e: TouchEvent) => { e.preventDefault(); };
     el.addEventListener("touchmove", preventScroll, { passive: false });
-    return () => {
-      el.removeEventListener("touchmove", preventScroll);
-    };
+    return () => { el.removeEventListener("touchmove", preventScroll); };
   }, []);
 
   /* ── Level transitions ── */
@@ -666,7 +587,7 @@ export default function SwipeableCardStack({
     setProductIndex(0);
     setTimeout(() => {
       setLevel("products");
-      setTimeout(() => setIsAnimating(false), 400);
+      setTimeout(() => setIsAnimating(false), 500);
     }, 50);
   }, []);
 
@@ -712,8 +633,13 @@ export default function SwipeableCardStack({
     }
   }, []);
 
-  /* ── Visible items ── */
-  const visibleItems = currentItems.slice(currentIndex, currentIndex + MAX_VISIBLE);
+  /* ── Current items and visible stack ── */
+  const currentBrandItems = brands;
+  const currentProductItems = brandProducts;
+
+  const visibleBrands = currentBrandItems.slice(brandIndex, brandIndex + MAX_VISIBLE);
+  const visibleProducts = currentProductItems.slice(productIndex, productIndex + MAX_VISIBLE);
+
   const selectedBrand = brands.find((b) => b.id === selectedBrandId);
 
   /* ── Empty state ── */
@@ -735,173 +661,169 @@ export default function SwipeableCardStack({
 
       {/* ── CARD STACK AREA ── */}
       <div className="relative w-full" style={{ maxWidth: "340px", margin: "0 auto" }}>
-        {/* Vertical dots — Apple Smart Stack style (right side) */}
         <div className="relative" style={{ height: "420px" }}>
-          <VerticalDots total={currentItems.length} current={currentIndex} />
+          {/* Vertical dots — only show brand count, always tracks brandIndex */}
+          <VerticalDots total={brands.length} current={brandIndex} />
 
           <div
             ref={containerRef}
             className="absolute inset-0 overflow-hidden"
-            style={{ touchAction: "none" }}      /* ← CRITICAL: stops ALL browser scroll/zoom */
+            style={{ touchAction: "none" }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onWheel={handleWheel}
           >
-            <AnimatePresence mode="popLayout">
-              {level === "brands" ? (
-                <motion.div
-                  key="brands-layer"
-                  className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 0.92, x: -40 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, x: -40 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 24, mass: 1, duration: 0.6 }}
-                >
-                  {/* Stack cards behind */}
-                  {visibleItems.slice(1).map((item, i) => {
-                    const brand = item as Brand;
-                    return (
-                      <StackCard key={`bs-${brand.id}`} index={i} total={visibleItems.length}>
-                        <MiniCardContent
-                          gradient={brand.gradient.bg}
-                          emoji={brand.emoji}
-                          label={brand.name}
-                        />
-                      </StackCard>
-                    );
-                  })}
-                  {/* Top card — Tinder draggable */}
-                  {visibleItems[0] && (
-                    <TinderCard
-                      key={`bt-${(visibleItems[0] as Brand).id}-${brandIndex}`}
-                      onSwipeRight={() => handleBrandSwipeRight(brandIndex)}
-                      onSwipeLeft={handleBrandSwipeLeft}
-                      rightLabel="KESFET"
-                      leftLabel="GEC"
-                      rightIcon={Store}
-                      leftIcon={X}
-                      rightColor="teal"
-                      leftColor="red"
+            {level === "brands" ? (
+              /* ═══ BRANDS LAYER ═══ */
+              <div className="absolute inset-0" key="brands-layer">
+                {/* Stack cards behind — NO framer-motion to avoid jitter */}
+                {visibleBrands.slice(1).map((brand, i) => {
+                  const scale = 1 - (i + 1) * 0.05;
+                  const yOffset = (i + 1) * 12;
+                  const opacity = i === 0 ? 0.9 : i === 1 ? 0.6 : 0.3;
+                  return (
+                    <div
+                      key={`bs-${brand.id}`}
+                      className="absolute inset-0 transition-all duration-700 ease-out"
+                      style={{
+                        transform: `scale(${scale}) translateY(${yOffset}px)`,
+                        opacity,
+                        zIndex: 40 - i,
+                      }}
                     >
-                      <BrandContent brand={visibleItems[0] as Brand} />
-                    </TinderCard>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="products-layer"
-                  className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 0.92, x: 40 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, x: 40 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 24, mass: 1, duration: 0.6 }}
-                >
-                  {/* Stack cards behind */}
-                  {visibleItems.slice(1).map((item, i) => {
-                    const gift = item as Gift;
-                    const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
-                    return (
-                      <StackCard key={`ps-${gift.id}`} index={i} total={visibleItems.length}>
-                        <MiniCardContent
-                          gradient={colors.bg}
-                          emoji={gift.image}
-                          label={gift.name}
-                        />
-                      </StackCard>
-                    );
-                  })}
-                  {/* Top card */}
-                  {visibleItems[0] && (
-                    <TinderCard
-                      key={`pt-${(visibleItems[0] as Gift).id}-${productIndex}`}
-                      onSwipeRight={() => handleProductSwipeRight(productIndex)}
-                      onSwipeLeft={handleProductSwipeLeft}
-                      disabled={disabled}
-                      rightLabel="GONDER"
-                      leftLabel="GERI"
-                      rightIcon={Send}
-                      leftIcon={ArrowLeft}
-                      rightColor="emerald"
-                      leftColor="orange"
+                      <MiniCardContent
+                        gradient={brand.gradient.bg}
+                        emoji={brand.emoji}
+                        label={brand.name}
+                      />
+                    </div>
+                  );
+                })}
+                {/* Top card — Tinder draggable */}
+                {visibleBrands[0] && (
+                  <TinderCard
+                    key={`bt-${visibleBrands[0].id}-${brandIndex}`}
+                    onSwipeRight={() => handleBrandSwipeRight(brandIndex)}
+                    onSwipeLeft={handleBrandSwipeLeft}
+                    rightLabel="KESFET"
+                    leftLabel="GEC"
+                    rightIcon={Store}
+                    leftIcon={X}
+                    rightColor="teal"
+                    leftColor="red"
+                  >
+                    <BrandContent brand={visibleBrands[0]} />
+                  </TinderCard>
+                )}
+              </div>
+            ) : (
+              /* ═══ PRODUCTS LAYER ═══ */
+              <div className="absolute inset-0" key="products-layer">
+                {/* Stack cards behind */}
+                {visibleProducts.slice(1).map((gift, i) => {
+                  const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
+                  const scale = 1 - (i + 1) * 0.05;
+                  const yOffset = (i + 1) * 12;
+                  const opacity = i === 0 ? 0.9 : i === 1 ? 0.6 : 0.3;
+                  return (
+                    <div
+                      key={`ps-${gift.id}`}
+                      className="absolute inset-0 transition-all duration-700 ease-out"
+                      style={{
+                        transform: `scale(${scale}) translateY(${yOffset}px)`,
+                        opacity,
+                        zIndex: 40 - i,
+                      }}
                     >
-                      <ProductContent gift={visibleItems[0] as Gift} />
-                    </TinderCard>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      <MiniCardContent
+                        gradient={colors.bg}
+                        emoji={gift.image}
+                        label={gift.name}
+                      />
+                    </div>
+                  );
+                })}
+                {/* Top card */}
+                {visibleProducts[0] && (
+                  <TinderCard
+                    key={`pt-${visibleProducts[0].id}-${productIndex}`}
+                    onSwipeRight={() => handleProductSwipeRight(productIndex)}
+                    onSwipeLeft={handleProductSwipeLeft}
+                    disabled={disabled}
+                    rightLabel="GONDER"
+                    leftLabel="GERI"
+                    rightIcon={Send}
+                    leftIcon={ArrowLeft}
+                    rightColor="emerald"
+                    leftColor="orange"
+                  >
+                    <ProductContent gift={visibleProducts[0]} />
+                  </TinderCard>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── HORIZONTAL DOTS — Bottom ── */}
-      <div className="mt-4">
-        <HorizontalDots total={currentItems.length} current={currentIndex} />
+      {/* ── HORIZONTAL DOTS — Bottom, only for products ── */}
+      <div className="mt-4 h-3">
+        {level === "products" && (
+          <HorizontalDots total={brandProducts.length} current={productIndex} />
+        )}
       </div>
 
       {/* ── ACTION BUTTONS ── */}
       <div className="flex items-center justify-center gap-5 mt-5">
         {level === "products" ? (
           <>
-            <motion.button
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
+            <button
               onClick={() => triggerButtonSwipe("left")}
-              className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-all"
+              className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-all active:scale-90"
             >
               <ArrowLeft className="w-5 h-5 text-orange-400" />
-            </motion.button>
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
+            <button
               onClick={() => triggerButtonSwipe("right")}
               disabled={disabled}
               className={cn(
-                "w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl transition-all",
+                "w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90",
                 disabled
                   ? "bg-muted/30 cursor-not-allowed"
                   : "bg-gradient-to-br from-primary to-pink-500 shadow-primary/30 hover:shadow-primary/50"
               )}
             >
               <Send className="w-7 h-7 text-white" />
-            </motion.button>
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
-              className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-all"
+            <button
+              className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-all active:scale-90"
             >
               <Heart className="w-5 h-5 text-purple-400" />
-            </motion.button>
+            </button>
           </>
         ) : (
           <>
-            <motion.button
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
+            <button
               onClick={() => triggerButtonSwipe("left")}
-              className="w-14 h-14 rounded-full bg-white border-2 border-red-200 flex items-center justify-center shadow-lg shadow-red-100/50 transition-all"
+              className="w-14 h-14 rounded-full bg-white border-2 border-red-200 flex items-center justify-center shadow-lg shadow-red-100/50 transition-all active:scale-90"
             >
               <X className="w-5 h-5 text-red-400" />
-            </motion.button>
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
+            <button
               onClick={() => triggerButtonSwipe("right")}
-              className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-all"
+              className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-all active:scale-90"
             >
               <Store className="w-7 h-7 text-white" />
-            </motion.button>
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.88 }}
-              className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-all"
+            <button
+              className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-all active:scale-90"
             >
               <Heart className="w-5 h-5 text-purple-400" />
-            </motion.button>
+            </button>
           </>
         )}
       </div>
