@@ -1,0 +1,395 @@
+// TEŞEKKÜRLER (İYİ Kİ) - Dijital Hediye Platformu
+// Veritabanı Şeması
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// KULLANICI YÖNETİMİ
+// ==========================================
+
+model User {
+  id                String    @id @default(uuid())
+  phone             String    @unique
+  phoneHash         String?   // Güvenlik için hashlenmiş telefon
+  name              String?
+  avatar            String?
+  birthday          DateTime?
+  role              UserRole  @default(USER)
+  tier              PremiumTier @default(FREE)
+  iyikiScore        Int       @default(0)
+  dailySendCount    Int       @default(0)
+  dailySendLimit    Int       @default(1)
+  dailyReceiveCount Int       @default(0)
+  status            UserStatus @default(ACTIVE)
+  pushEnabled       Boolean   @default(true)
+  smsEnabled        Boolean   @default(true)
+  
+  // Premium
+  premiumStartedAt  DateTime?
+  premiumExpiresAt  DateTime?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime? // Soft delete (KVKK)
+  lastLoginAt       DateTime?
+  
+  // Relations
+  sentGifts         GiftAction[] @relation("SentGifts")
+  receivedGifts     GiftAction[] @relation("ReceivedGifts")
+  devices           Device[]
+  notifications     Notification[]
+  fraudFlags        FraudFlag[]
+  scheduledGifts    ScheduledGift[]
+  
+  // Indexes
+  @@index([phone])
+  @@index([status])
+  @@index([role])
+  @@index([createdAt])
+  
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  PARTNER
+  SPONSOR
+}
+
+enum PremiumTier {
+  FREE
+  PREMIUM
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+// ==========================================
+// CİHAZ YÖNETİMİ (FRAUD KORUMA)
+// ==========================================
+
+model Device {
+  id            String   @id @default(uuid())
+  userId        String
+  fingerprint   String   @unique // Donanım + yazılım parmak izi
+  platform      String   // ios, android, web
+  osVersion     String?
+  appVersion    String?
+  trustScore    Float    @default(1.0) // 0.0 - 1.0
+  isBlacklisted Boolean  @default(false)
+  lastSeenAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  
+  user          User     @relation(fields: [userId], references: [id])
+  
+  @@index([fingerprint])
+  @@index([userId])
+  @@index([isBlacklisted])
+  
+  @@map("devices")
+}
+
+// ==========================================
+// HEDİYE & PARTNER YÖNETİMİ
+// ==========================================
+
+model Partner {
+  id            String    @id @default(uuid())
+  name          String
+  logo          String?
+  apiKey        String    @unique
+  apiSecret     String?
+  webhookUrl    String?
+  contactEmail  String?
+  contactPhone  String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  gifts         Gift[]
+  branches      Branch[]
+  
+  @@map("partners")
+}
+
+model Branch {
+  id            String    @id @default(uuid())
+  partnerId     String
+  name          String
+  address       String
+  city          String?
+  district      String?
+  lat           Float
+  lng           Float
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  
+  partner       Partner   @relation(fields: [partnerId], references: [id])
+  giftActions   GiftAction[]
+  
+  @@index([partnerId])
+  @@index([lat, lng])
+  
+  @@map("branches")
+}
+
+model Gift {
+  id            String       @id @default(uuid())
+  partnerId     String
+  name          String
+  description   String?
+  image         String?      // Emoji veya URL
+  category      GiftCategory
+  stock         Int          @default(0)
+  expiryHours   Int          @default(72)
+  sponsorId     String?
+  isActive      Boolean      @default(true)
+  isPremium     Boolean      @default(false)
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  partner       Partner      @relation(fields: [partnerId], references: [id])
+  sponsor       Sponsor?     @relation(fields: [sponsorId], references: [id])
+  giftActions   GiftAction[]
+  
+  @@index([partnerId])
+  @@index([category])
+  @@index([isActive])
+  @@index([sponsorId])
+  
+  @@map("gifts")
+}
+
+enum GiftCategory {
+  COFFEE
+  CHOCOLATE
+  BOOK
+  FLOWER
+  EXPERIENCE
+  FOOD
+}
+
+// ==========================================
+// HEDİYE İŞLEMLERİ (YAŞAM DÖNGÜSÜ)
+// ==========================================
+
+model GiftAction {
+  id            String       @id @default(uuid())
+  giftId        String
+  senderId      String
+  receiverId    String?      // Null ise henüz kayıtlı değil
+  receiverPhone String
+  note          String?
+  status        GiftActionStatus @default(PENDING)
+  redeemCode    String       @unique
+  branchId      String?
+  
+  // Timestamps
+  createdAt     DateTime     @default(now())
+  expiresAt     DateTime
+  claimedAt     DateTime?
+  expiredAt     DateTime?
+  pooledAt      DateTime?    // Askıda havuzuna düştüğü an
+  distributedAt DateTime?
+  
+  // Relations
+  gift          Gift         @relation(fields: [giftId], references: [id])
+  sender        User         @relation("SentGifts", fields: [senderId], references: [id])
+  receiver      User?        @relation("ReceivedGifts", fields: [receiverId], references: [id])
+  branch        Branch?      @relation(fields: [branchId], references: [id])
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([receiverPhone])
+  @@index([status])
+  @@index([redeemCode])
+  @@index([expiresAt])
+  @@index([createdAt])
+  
+  @@map("gift_actions")
+}
+
+enum GiftActionStatus {
+  PENDING      // Gönderildi, bekleniyor
+  CLAIMED      // Kullanıldı
+  EXPIRED      // Süresi doldu
+  SOCIAL_POOL  // Askıda havuzuna aktarıldı
+  DISTRIBUTED  // Havuzdan dağıtıldı
+  CANCELLED    // İptal edildi
+}
+
+// ==========================================
+// SPONSOR YÖNETİMİ
+// ==========================================
+
+model Sponsor {
+  id                   String    @id @default(uuid())
+  name                 String
+  logo                 String?
+  contactEmail         String?
+  contactPhone         String?
+  budget               Float     @default(0)
+  spent                Float     @default(0)
+  campaignStart        DateTime
+  campaignEnd          DateTime
+  isActive             Boolean   @default(true)
+  giftsSponsoredCount  Int       @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  gifts                Gift[]
+  
+  @@map("sponsors")
+}
+
+// ==========================================
+// BİLDİRİM SİSTEMİ
+// ==========================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  actionId  String?          // İlgili GiftAction ID
+  createdAt DateTime         @default(now())
+  
+  user      User             @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  
+  @@map("notifications")
+}
+
+enum NotificationType {
+  GIFT_RECEIVED
+  GIFT_REDEEMED
+  GIFT_EXPIRING
+  GIFT_EXPIRED
+  GIFT_TO_POOL
+  GIFT_DISTRIBUTED
+  PREMIUM
+  SYSTEM
+}
+
+// ==========================================
+// FRAUD KORUMA
+// ==========================================
+
+model FraudFlag {
+  id          String        @id @default(uuid())
+  userId      String
+  type        FraudType
+  severity    FraudSeverity
+  description String
+  metadata    Json?         // Ek detaylar (cihaz bilgisi, konum vb.)
+  resolved    Boolean       @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  
+  user        User          @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([type])
+  @@index([severity])
+  @@index([resolved])
+  
+  @@map("fraud_flags")
+}
+
+enum FraudType {
+  LOOPING
+  FAKE_GPS
+  EMULATOR
+  CLONING
+  RATE_ABUSE
+  SUSPICIOUS_BEHAVIOR
+}
+
+enum FraudSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ==========================================
+// PLANLI GÖNDERİM (PREMIUM)
+// ==========================================
+
+model ScheduledGift {
+  id            String    @id @default(uuid())
+  userId        String
+  giftId        String
+  receiverPhone String
+  receiverName  String?
+  note          String?
+  scheduledFor  DateTime
+  occasion      String?   // "birthday", "anniversary", vb.
+  isProcessed   Boolean   @default(false)
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  
+  user          User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([scheduledFor])
+  @@index([isProcessed])
+  
+  @@map("scheduled_gifts")
+}
+
+// ==========================================
+// ANALİTİK & AUDIT LOG
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // "gift_sent", "gift_redeemed", "user_suspended", vb.
+  target    String?  // Hedef kaynak ID
+  metadata  Json?    // Ek detaylar
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  
+  @@map("audit_logs")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  eventName  String   // "app_opened", "gift_sent", vb.
+  userId     String?
+  properties Json?
+  platform   String?  // "ios", "android", "web"
+  sessionId  String?
+  createdAt  DateTime @default(now())
+  
+  @@index([eventName])
+  @@index([userId])
+  @@index([createdAt])
+  
+  @@map("analytics_events")
+}
