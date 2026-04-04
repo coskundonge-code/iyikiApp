@@ -25,14 +25,15 @@ import type { Gift } from "@/types";
 
    Navigasyon modeli:
    ─ MARKA seviyesi:
-     • Dikey kayma → markalar arasi gecis
+     • Dikey kayma → markalar arasi gecis (SADECE dikey ile marka degisir)
      • Saga kaydir → markanin urunlerine gir
-     • Sola kaydir → sonraki markaya gec
+     • Sola kaydir → snap-back (marka degistirmez)
    ─ URUN seviyesi:
-     • Sola kaydir → sonraki urune gec (Tinder "pass")
+     • Sola kaydir → sonraki urune gec (son urundeyse DUR)
      • Saga kaydir → hediye gonder (Tinder "like")
      • Dikey kayma → markalara geri don
-     • Son urun sola kaydirinca → markalara geri don
+   ─ Alt noktalar: sadece urun seviyesinde gosterilir
+   ─ Sag noktalar: her zaman marka indexini gosterir
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Constants ── */
@@ -629,11 +630,9 @@ export default function SwipeableCardStack({
   );
 
   const handleBrandSwipeLeft = useCallback(() => {
-    // Sola kaydir = sonraki marka
-    if (brandIndex < brands.length - 1) {
-      setBrandIndex((i) => i + 1);
-    }
-  }, [brandIndex, brands.length]);
+    // Sola kaydir — marka degistirme! Marka gecisi sadece dikey swipe ile olur.
+    // Kart snap-back yapacak (hicbir sey yapma).
+  }, []);
 
   // -- PRODUCTS --
   const handleProductSwipeRight = useCallback(
@@ -646,14 +645,12 @@ export default function SwipeableCardStack({
   );
 
   const handleProductSwipeLeft = useCallback(() => {
-    // Sola kaydir = sonraki urun. Son urundeyse markalara don.
+    // Sola kaydir = sonraki urun. Son urundeyse DUR (marka degisimi sadece dikey swipe ile olur).
     if (productIndex < brandProducts.length - 1) {
       setProductIndex((i) => i + 1);
-    } else {
-      // Son urun — markalara geri don
-      backToBrands();
     }
-  }, [productIndex, brandProducts.length, backToBrands]);
+    // else: son urun — hicbir sey yapma, kart yerine geri doner
+  }, [productIndex, brandProducts.length]);
 
   /* ── Button swipe triggers ── */
   const triggerButtonSwipe = useCallback((direction: "left" | "right") => {
@@ -779,15 +776,10 @@ export default function SwipeableCardStack({
         </div>
       </div>
 
-      {/* ── HORIZONTAL DOTS — product index, always visible at product level ── */}
+      {/* ── HORIZONTAL DOTS — sadece urun seviyesinde goster ── */}
       <div className="mt-4 flex items-center justify-center" style={{ minHeight: 12 }}>
-        {level === "products" ? (
+        {level === "products" && (
           <HorizontalDots total={brandProducts.length} current={productIndex} />
-        ) : (
-          /* Brand level: show brand count as small label */
-          <span className="text-[11px] text-muted/30 font-semibold">
-            {brandIndex + 1} / {brands.length}
-          </span>
         )}
       </div>
 
