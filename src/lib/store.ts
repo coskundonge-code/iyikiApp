@@ -101,7 +101,7 @@ interface AppState {
   getFilteredGifts: () => Gift[];
 
   // Admin/Partner Actions
-  addGift: (gift: Omit<Gift, 'id' | 'partnerLogo' | 'expiryHours' | 'isActive' | 'sponsorId' | 'sponsorName'>) => void;
+  addGift: (gift: Omit<Gift, 'id' | 'partnerLogo' | 'expiryHours' | 'isActive' | 'sponsorId' | 'sponsorName'> & { productLogo?: string; corporateLogo?: string }) => void;
   resolveFraudFlag: (flagId: string) => void;
   suspendUser: (userId: string) => void;
 }
@@ -592,9 +592,12 @@ export const useAppStore = create<AppState>()(
 
       // Admin/Partner Actions
       addGift: (giftData) => {
+        const { productLogo, corporateLogo, ...rest } = giftData;
         const newGift: Gift = {
           id: `gift-${Date.now()}`,
-          ...giftData,
+          ...rest,
+          productLogo: productLogo || undefined,
+          corporateLogo: corporateLogo || undefined,
           partnerLogo: '🏪',
           expiryHours: 48,
           isActive: true,

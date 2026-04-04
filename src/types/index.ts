@@ -31,6 +31,8 @@ export interface Gift {
   name: string;
   description: string;
   image: string;
+  productLogo?: string;
+  corporateLogo?: string;
   category: GiftCategory;
   stock: number;
   expiryHours: number;

@@ -5,6 +5,7 @@ import { Plus, Edit3, X, Package } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import ImageUploader from "@/components/ImageUploader";
 
 const CATEGORIES = ["coffee", "chocolate", "book", "flower", "experience", "food"];
 
@@ -15,6 +16,8 @@ interface ProductForm {
   stock: number;
   isPremium: boolean;
   image: string;
+  productLogo: string;
+  corporateLogo: string;
 }
 
 const EMPTY_FORM: ProductForm = {
@@ -24,6 +27,8 @@ const EMPTY_FORM: ProductForm = {
   stock: 100,
   isPremium: false,
   image: "☕",
+  productLogo: "",
+  corporateLogo: "",
 };
 
 const CATEGORY_EMOJIS: Record<string, string> = {
@@ -63,6 +68,8 @@ export default function PartnerProductsPage() {
           stock: gift.stock,
           isPremium: gift.isPremium,
           image: gift.image,
+          productLogo: gift.productLogo || "",
+          corporateLogo: gift.corporateLogo || "",
         });
         setEditingId(giftId);
       }
@@ -98,6 +105,8 @@ export default function PartnerProductsPage() {
           stock: form.stock,
           isPremium: form.isPremium,
           image: CATEGORY_EMOJIS[form.category] || "🎁",
+          productLogo: form.productLogo || undefined,
+          corporateLogo: form.corporateLogo || undefined,
           partnerId: partner?.id || "",
           partnerName: partner?.name || "",
         });
@@ -185,6 +194,24 @@ export default function PartnerProductsPage() {
               </div>
             </div>
 
+            {/* Logo Yükleme Alanları */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ImageUploader
+                label="Ürün Logosu"
+                value={form.productLogo}
+                onChange={(url) => setForm({ ...form, productLogo: url })}
+                placeholder="Ürün logo URL'si"
+                hint="Ürünü temsil eden görsel (ör. kahve görseli)"
+              />
+              <ImageUploader
+                label="Kurumsal Logo"
+                value={form.corporateLogo}
+                onChange={(url) => setForm({ ...form, corporateLogo: url })}
+                placeholder="Firma logo URL'si"
+                hint="Marka veya firma logosu"
+              />
+            </div>
+
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -225,7 +252,14 @@ export default function PartnerProductsPage() {
           )}
           {partnerGifts.map((gift) => (
             <div key={gift.id} className="flex items-center gap-3 p-4 hover:bg-card-hover transition-colors">
-              <span className="text-3xl">{gift.image}</span>
+              {gift.productLogo ? (
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gift.productLogo} alt={gift.name} className="w-full h-full object-contain" />
+                </div>
+              ) : (
+                <span className="text-3xl">{gift.image}</span>
+              )}
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-foreground">{gift.name}</h4>
                 <p className="text-xs text-muted mt-0.5">{gift.description}</p>
@@ -237,6 +271,12 @@ export default function PartnerProductsPage() {
                     <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
                       PRO
                     </span>
+                  )}
+                  {gift.corporateLogo && (
+                    <div className="w-4 h-4 rounded overflow-hidden bg-gray-50 flex-shrink-0" title="Kurumsal logo">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={gift.corporateLogo} alt="Kurumsal" className="w-full h-full object-contain" />
+                    </div>
                   )}
                 </div>
               </div>

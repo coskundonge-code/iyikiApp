@@ -22,9 +22,10 @@ export default function AdminGiftsPage() {
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 p-3 bg-gray-50 border-b border-border text-xs font-medium text-muted">
+        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] gap-4 p-3 bg-gray-50 border-b border-border text-xs font-medium text-muted">
           <span></span>
           <span>Hediye</span>
+          <span>Logo</span>
           <span>Kategori</span>
           <span>Stok</span>
           <span>Sponsor</span>
@@ -32,12 +33,27 @@ export default function AdminGiftsPage() {
         </div>
         <div className="divide-y divide-border">
           {gifts.map((gift) => (
-            <div key={gift.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 items-center p-3 hover:bg-card-hover transition-colors">
-              <span className="text-2xl">{gift.image}</span>
+            <div key={gift.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] gap-4 items-center p-3 hover:bg-card-hover transition-colors">
+              {gift.productLogo ? (
+                <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gift.productLogo} alt={gift.name} className="w-full h-full object-contain" />
+                </div>
+              ) : (
+                <span className="text-2xl">{gift.image}</span>
+              )}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{gift.name}</p>
                 <p className="text-[10px] text-muted">{gift.partnerName}</p>
               </div>
+              {gift.corporateLogo ? (
+                <div className="w-6 h-6 rounded overflow-hidden bg-gray-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gift.corporateLogo} alt="Kurumsal" className="w-full h-full object-contain" />
+                </div>
+              ) : (
+                <span className="text-[10px] text-muted">—</span>
+              )}
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
                 {gift.category}
               </span>

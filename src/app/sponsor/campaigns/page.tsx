@@ -28,7 +28,14 @@ export default function SponsorCampaignsPage() {
         {sponsoredGifts.map((gift) => (
           <div key={gift.id} className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{gift.image}</span>
+              {gift.productLogo ? (
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gift.productLogo} alt={gift.name} className="w-full h-full object-contain" />
+                </div>
+              ) : (
+                <span className="text-3xl">{gift.image}</span>
+              )}
               <div className="flex-1">
                 <h4 className="font-semibold text-foreground">{gift.name}</h4>
                 <p className="text-xs text-muted">{gift.partnerName}</p>
