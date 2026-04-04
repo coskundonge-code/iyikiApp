@@ -39,7 +39,7 @@ import type { Gift } from "@/types";
 const SWIPE_VELOCITY_THRESHOLD = 300;
 const SWIPE_POSITION_THRESHOLD = 60;
 const THROW_DISTANCE = 1500;
-const ROTATION_RANGE = 25;
+const ROTATION_RANGE = 15;            // Daha az rotasyon — daha temiz görünüm
 const THROW_DURATION = 1.2;             // Cok yavas throw — net gorulebilir
 
 const VERTICAL_DRAG_THRESHOLD = 35;
@@ -512,29 +512,52 @@ export default function SwipeableCardStack({
   );
 
   /* ═══════════════════════════════════════════════════════════════
-     TOUCH HANDLING
+     POINTER EVENT CAPTURE — direction lock BEFORE framer-motion
+
+     Sorun: Parmak yukarı kaydırırken doğal olarak 1-3px yatay hareket
+     oluyor. Framer-motion drag="x" bunu alıp kartı sağa/sola kaydırıyor.
+
+     Çözüm: Pointer event capture phase'de yönü tespit et. Dikey algılanırsa
+     stopPropagation ile framer-motion'a olayın ulaşmasını engelle.
      ═══════════════════════════════════════════════════════════════ */
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-    touchStartX.current = e.touches[0].clientX;
+  const gestureDir = useRef<"none" | "vertical" | "horizontal">("none");
+
+  const handlePointerDownCapture = useCallback((e: React.PointerEvent) => {
+    gestureDir.current = "none";
+    touchStartY.current = e.clientY;
+    touchStartX.current = e.clientX;
     touchHandled.current = false;
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-    if (touchHandled.current) return;
+  const handlePointerMoveCapture = useCallback(
+    (e: React.PointerEvent) => {
+      const dy = touchStartY.current - e.clientY;
+      const dx = touchStartX.current - e.clientX;
+      const absDy = Math.abs(dy);
+      const absDx = Math.abs(dx);
 
-    const dy = touchStartY.current - e.touches[0].clientY;
-    const dx = touchStartX.current - e.touches[0].clientX;
-    const absDy = Math.abs(dy);
-    const absDx = Math.abs(dx);
+      // Yön kilitlenmedi ise: 8px sonra karar ver
+      if (gestureDir.current === "none" && (absDy > 8 || absDx > 8)) {
+        gestureDir.current = absDy >= absDx ? "vertical" : "horizontal";
+      }
 
-    // Sadece net dikey hareket varsa yakala, yatay framer-motion'a kalsin
-    if (absDy > VERTICAL_DRAG_THRESHOLD && absDy > absDx * 1.8) {
-      touchHandled.current = true;
-      goVertical(dy > 0 ? "up" : "down");
-    }
-  }, [goVertical]);
+      // Dikey kilitlendiyse: framer-motion'a ULAŞMASIN
+      if (gestureDir.current === "vertical") {
+        e.stopPropagation(); // capture phase — framer-motion asla görmez
+
+        if (!touchHandled.current && absDy > VERTICAL_DRAG_THRESHOLD) {
+          touchHandled.current = true;
+          goVertical(dy > 0 ? "up" : "down");
+        }
+      }
+      // "horizontal" ise: hiçbir şey yapma, framer-motion halleder
+    },
+    [goVertical]
+  );
+
+  const handlePointerUpCapture = useCallback(() => {
+    gestureDir.current = "none";
+  }, []);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -546,7 +569,7 @@ export default function SwipeableCardStack({
     [goVertical]
   );
 
-  /* ── Native touchmove preventDefault ── */
+  /* ── Native touchmove preventDefault — sayfa scroll engelle ── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -656,8 +679,9 @@ export default function SwipeableCardStack({
             ref={containerRef}
             className="absolute inset-0 overflow-hidden"
             style={{ touchAction: "none" }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
+            onPointerDownCapture={handlePointerDownCapture}
+            onPointerMoveCapture={handlePointerMoveCapture}
+            onPointerUpCapture={handlePointerUpCapture}
             onWheel={handleWheel}
           >
             {level === "brands" ? (
