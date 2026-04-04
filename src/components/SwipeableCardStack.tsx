@@ -29,8 +29,8 @@ import type { Gift } from "@/types";
      • Saga kaydir → markanin urunlerine gir
      • Sola kaydir → snap-back (marka degistirmez)
    ─ URUN seviyesi:
-     • Sola kaydir → sonraki urune gec (son urundeyse DUR)
-     • Saga kaydir → onceki urune gec (ilk urundeyse DUR)
+     • Sola kaydir → SONRAKI urune gec (son urundeyse DUR)
+     • Saga kaydir → ONCEKI urune gec (ilk urundeyse DUR)
      • Dikey kayma → markalara geri don
      • GONDER butonu → sadece tiklamayla (swipe degil)
    ─ Alt gosterge: sadece urun seviyesinde "1/3" formati
@@ -133,15 +133,16 @@ function TinderCard({
       (velocity.x < -SWIPE_VELOCITY_THRESHOLD && offset.x < -15);
 
     if (noThrow) {
-      // Karusel modu: kart firlamaz, snap-back yapar, sonra callback
-      await controls.start({
+      // Karusel modu: ONCE callback cagir (flash onlenir), SONRA snap-back
+      if (swipeRight) onSwipeRight();
+      else if (swipeLeft) onSwipeLeft();
+      // Snap-back (eger kart hala mount ise gorulur)
+      controls.start({
         x: 0,
         rotate: 0,
         opacity: 1,
         transition: { type: "spring", stiffness: 300, damping: 25 },
       });
-      if (swipeRight) onSwipeRight();
-      else if (swipeLeft) onSwipeLeft();
       return;
     }
 
@@ -636,16 +637,16 @@ export default function SwipeableCardStack({
     if (brand) enterBrand(brand);
   }, [brands, brandIndex, enterBrand]);
 
-  // -- PRODUCTS (karusel: saga = sonraki, sola = onceki) --
-  const handleProductSwipeRight = useCallback(() => {
-    // Saga kaydir = SONRAKI urun. Son urundeyse DUR.
+  // -- PRODUCTS (karusel: sola = sonraki, saga = onceki) --
+  const handleProductNext = useCallback(() => {
+    // SONRAKI urun (sola kaydir). Son urundeyse DUR.
     if (productIndex < brandProducts.length - 1) {
       setProductIndex((i) => i + 1);
     }
   }, [productIndex, brandProducts.length]);
 
-  const handleProductSwipeLeft = useCallback(() => {
-    // Sola kaydir = ONCEKI urun. Ilk urundeyse DUR.
+  const handleProductPrev = useCallback(() => {
+    // ONCEKI urun (saga kaydir). Ilk urundeyse DUR.
     if (productIndex > 0) {
       setProductIndex((i) => i - 1);
     }
@@ -755,15 +756,15 @@ export default function SwipeableCardStack({
                 {brandProducts[productIndex] && (
                   <TinderCard
                     key={`pt-${selectedBrandId}`}
-                    onSwipeRight={handleProductSwipeRight}
-                    onSwipeLeft={handleProductSwipeLeft}
+                    onSwipeRight={handleProductPrev}
+                    onSwipeLeft={handleProductNext}
                     noThrow
-                    rightLabel="SONRAKI"
-                    leftLabel="ONCEKI"
+                    rightLabel="ONCEKI"
+                    leftLabel="SONRAKI"
                     rightIcon={ChevronRight}
                     leftIcon={ChevronRight}
-                    rightColor="teal"
-                    leftColor="orange"
+                    rightColor="orange"
+                    leftColor="teal"
                   >
                     <ProductContent gift={brandProducts[productIndex]} />
                   </TinderCard>
@@ -786,7 +787,7 @@ export default function SwipeableCardStack({
         {level === "products" ? (
           <>
             <button
-              onClick={handleProductSwipeLeft}
+              onClick={handleProductPrev}
               className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-transform active:scale-90"
             >
               <ChevronRight className="w-5 h-5 text-orange-400 rotate-180" />
@@ -806,7 +807,7 @@ export default function SwipeableCardStack({
             </button>
 
             <button
-              onClick={handleProductSwipeRight}
+              onClick={handleProductNext}
               className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
             >
               <ChevronRight className="w-5 h-5 text-teal-400" />
