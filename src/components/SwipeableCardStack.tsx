@@ -290,8 +290,8 @@ function CardShell({ gradient, glow, children }: { gradient: string; glow: strin
 function BrandContent({ brand }: { brand: Brand }) {
   return (
     <CardShell gradient={brand.gradient.bg} glow={brand.gradient.glow}>
-      <div className="text-[88px] mb-2 drop-shadow-lg">{brand.emoji}</div>
-      <h2 className="text-[30px] font-black text-center leading-tight drop-shadow-sm">{brand.name}</h2>
+      <div className="text-[64px] mb-1 drop-shadow-lg">{brand.emoji}</div>
+      <h2 className="text-[26px] font-black text-center leading-tight drop-shadow-sm">{brand.name}</h2>
       <div className="flex items-center gap-2 mt-3">
         <span className="px-3.5 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-[12px] font-bold border border-white/20 flex items-center gap-1.5">
           <GiftIcon className="w-3 h-3" />
@@ -310,9 +310,9 @@ function ProductContent({ gift }: { gift: Gift }) {
   const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
   return (
     <CardShell gradient={colors.bg} glow={colors.glow}>
-      <div className="text-[88px] mb-2 drop-shadow-lg">{gift.image}</div>
-      <h2 className="text-[26px] font-black text-center leading-tight drop-shadow-sm">{gift.name}</h2>
-      <p className="text-white/70 text-[14px] font-semibold mt-1">{gift.partnerName}</p>
+      <div className="text-[64px] mb-1 drop-shadow-lg">{gift.image}</div>
+      <h2 className="text-[22px] font-black text-center leading-tight drop-shadow-sm">{gift.name}</h2>
+      <p className="text-white/70 text-[13px] font-semibold mt-0.5">{gift.partnerName}</p>
       <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
         {gift.isPremium && (
           <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-bold border border-white/20">PRO</span>
@@ -324,7 +324,7 @@ function ProductContent({ gift }: { gift: Gift }) {
           {gift.stock > 10 ? "Stokta" : gift.stock > 0 ? `Son ${gift.stock}` : "Tukendi"}
         </span>
       </div>
-      <p className="text-white/40 text-[13px] mt-5 text-center max-w-[240px]">
+      <p className="text-white/40 text-[12px] mt-2 text-center max-w-[240px]">
         {gift.description || "Gonder butonuna tikla"}
       </p>
     </CardShell>
@@ -383,7 +383,7 @@ function VerticalDots({ total, current }: { total: number; current: number }) {
    ═══════════════════════════════════════════════════════════════ */
 function LevelBreadcrumb({ level, brandName, onBack }: { level: "brands" | "products"; brandName?: string; onBack: () => void }) {
   return (
-    <div className="flex items-center gap-2 mb-4 h-8">
+    <div className="flex items-center gap-2 mb-2 h-8">
       {level === "products" ? (
         <>
           <button
@@ -690,7 +690,7 @@ export default function SwipeableCardStack({
 
       {/* ── CARD STACK AREA ── */}
       <div className="relative w-full" style={{ maxWidth: "340px", margin: "0 auto" }}>
-        <div className="relative" style={{ height: "420px" }}>
+        <div className="relative" style={{ height: "min(320px, 45dvh)" }}>
           {/* Vertical dots — always shows BRANDS */}
           <VerticalDots total={brands.length} current={brandIndex} />
 
@@ -776,14 +776,14 @@ export default function SwipeableCardStack({
       </div>
 
       {/* ── HORIZONTAL DOTS — sadece urun seviyesinde goster ── */}
-      <div className="mt-4 flex items-center justify-center" style={{ minHeight: 12 }}>
+      <div className="mt-2 flex items-center justify-center" style={{ minHeight: 12 }}>
         {level === "products" && (
           <ProductCounter total={brandProducts.length} current={productIndex} />
         )}
       </div>
 
       {/* ── ACTION BUTTONS ── */}
-      <div className="flex items-center justify-center gap-5 mt-5">
+      <div className="flex items-center justify-center gap-5 mt-3">
         {level === "products" ? (
           <>
             <button

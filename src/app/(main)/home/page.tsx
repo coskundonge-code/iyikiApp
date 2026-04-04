@@ -118,7 +118,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="px-5 pt-6 pb-8 space-y-8">
+    <div className="px-5 pt-4 pb-8 space-y-5">
       {/* Welcome — Compact */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
