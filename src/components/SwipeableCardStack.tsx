@@ -24,20 +24,22 @@ import type { Gift } from "@/types";
    TINDER + APPLE SMART STACK — PROFESSIONAL CARD STACK
 
    Research-based animation values:
-   - Tinder: rotation -50°/+50°, scale 0.95→1.0 reveal,
-     velocity threshold 500px/s, throw exit 1500px
-   - Apple Smart Stack: 10px vertical offset per card,
+   - Tinder: rotation -45°/+45°, scale 0.95→1.0 reveal,
+     velocity threshold 400px/s, throw exit 1500px
+   - Apple Smart Stack: 12px vertical offset per card,
      spring-based slide, depth parallax via scale
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Constants ── */
-const SWIPE_VELOCITY_THRESHOLD = 500;   // px/s — fast flick completes swipe
-const SWIPE_POSITION_THRESHOLD = 120;   // px — drag distance completes swipe
+const SWIPE_VELOCITY_THRESHOLD = 400;   // px/s — fast flick completes swipe
+const SWIPE_POSITION_THRESHOLD = 80;    // px — drag distance completes swipe
 const THROW_DISTANCE = 1500;            // px — how far card flies off
-const ROTATION_RANGE = 45;              // degrees — max rotation on full drag
-const DRAG_ELASTIC = 0.35;             // bounce outside constraints
+const ROTATION_RANGE = 35;              // degrees — max rotation on full drag
+const THROW_DURATION = 0.8;             // seconds — slow throw for visibility
+const SNAPBACK_STIFFNESS = 300;         // spring snap-back
+const SNAPBACK_DAMPING = 22;            // spring snap-back damping
 
-const VERTICAL_DRAG_THRESHOLD = 40;     // px — vertical swipe distance
+const VERTICAL_DRAG_THRESHOLD = 30;     // px — vertical swipe distance
 const MAX_VISIBLE = 3;                  // visible cards in stack
 
 /* ── Brand gradients ── */
@@ -102,52 +104,56 @@ function TinderCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   // ── Tinder transforms ──
-  // Rotation: -45° to +45° over -200px to +200px drag
   const rotate = useTransform(x, [-200, 0, 200], [-ROTATION_RANGE, 0, ROTATION_RANGE]);
 
   // Stamp opacity: fade in as you drag
-  const rightStampOpacity = useTransform(x, [0, 40, 100], [0, 0.4, 1]);
-  const leftStampOpacity = useTransform(x, [-100, -40, 0], [1, 0.4, 0]);
+  const rightStampOpacity = useTransform(x, [0, 30, 80], [0, 0.3, 1]);
+  const leftStampOpacity = useTransform(x, [-80, -30, 0], [1, 0.3, 0]);
 
-  // Background tint for direction feedback
-  const rightTint = useTransform(x, [0, 150], ["rgba(16,185,129,0)", "rgba(16,185,129,0.08)"]);
-  const leftTint = useTransform(x, [-150, 0], ["rgba(239,68,68,0.08)", "rgba(239,68,68,0)"]);
+  // Background tint
+  const rightTint = useTransform(x, [0, 120], ["rgba(16,185,129,0)", "rgba(16,185,129,0.1)"]);
+  const leftTint = useTransform(x, [-120, 0], ["rgba(239,68,68,0.1)", "rgba(239,68,68,0)"]);
 
   const handleDragEnd = async (_: unknown, info: PanInfo) => {
     if (disabled) {
-      await controls.start({ x: 0, transition: { type: "spring", stiffness: 500, damping: 30 } });
+      await controls.start({ x: 0, transition: { type: "spring", stiffness: 400, damping: 28 } });
       return;
     }
 
     const { offset, velocity } = info;
-    const swipeRight = offset.x > SWIPE_POSITION_THRESHOLD || velocity.x > SWIPE_VELOCITY_THRESHOLD;
-    const swipeLeft = offset.x < -SWIPE_POSITION_THRESHOLD || velocity.x < -SWIPE_VELOCITY_THRESHOLD;
+    // Check both position AND velocity for swipe detection
+    const swipeRight =
+      offset.x > SWIPE_POSITION_THRESHOLD ||
+      (velocity.x > SWIPE_VELOCITY_THRESHOLD && offset.x > 20);
+    const swipeLeft =
+      offset.x < -SWIPE_POSITION_THRESHOLD ||
+      (velocity.x < -SWIPE_VELOCITY_THRESHOLD && offset.x < -20);
 
     if (swipeRight) {
-      // Throw card to the right with momentum
+      // Throw card to the right — SLOW for visibility
       await controls.start({
         x: THROW_DISTANCE,
-        rotate: ROTATION_RANGE + 20,
+        rotate: ROTATION_RANGE + 15,
         opacity: 0,
-        transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] },
+        transition: { duration: THROW_DURATION, ease: [0.25, 0.46, 0.45, 0.94] },
       });
       onSwipeRight();
     } else if (swipeLeft) {
-      // Throw card to the left with momentum
+      // Throw card to the left — SLOW for visibility
       await controls.start({
         x: -THROW_DISTANCE,
-        rotate: -(ROTATION_RANGE + 20),
+        rotate: -(ROTATION_RANGE + 15),
         opacity: 0,
-        transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] },
+        transition: { duration: THROW_DURATION, ease: [0.25, 0.46, 0.45, 0.94] },
       });
       onSwipeLeft();
     } else {
-      // Snap back with elastic spring
+      // Snap back with elastic spring — gentle
       await controls.start({
         x: 0,
         rotate: 0,
         opacity: 1,
-        transition: { type: "spring", stiffness: 400, damping: 25, mass: 0.8 },
+        transition: { type: "spring", stiffness: SNAPBACK_STIFFNESS, damping: SNAPBACK_DAMPING, mass: 1 },
       });
     }
   };
@@ -159,9 +165,9 @@ function TinderCard({
       const dir = direction === "right" ? 1 : -1;
       await controls.start({
         x: dir * THROW_DISTANCE,
-        rotate: dir * (ROTATION_RANGE + 20),
+        rotate: dir * (ROTATION_RANGE + 15),
         opacity: 0,
-        transition: { duration: 0.45, ease: [0.32, 0.72, 0, 1] },
+        transition: { duration: THROW_DURATION * 1.1, ease: [0.25, 0.46, 0.45, 0.94] },
       });
       if (direction === "right") onSwipeRight();
       else onSwipeLeft();
@@ -180,11 +186,17 @@ function TinderCard({
     <motion.div
       ref={cardRef}
       data-tinder-card
-      className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none will-change-transform"
-      style={{ x, rotate, zIndex: 50 }}
+      className="absolute inset-0 cursor-grab active:cursor-grabbing will-change-transform"
+      style={{
+        x,
+        rotate,
+        zIndex: 50,
+        touchAction: "none",           // ← CRITICAL: prevent browser scroll
+      }}
       drag={disabled ? false : "x"}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={DRAG_ELASTIC}
+      dragElastic={0.85}               // ← More elastic = easier to drag far
+      dragMomentum={false}             // ← We handle momentum in onDragEnd
       onDragEnd={handleDragEnd}
       animate={controls}
       initial={{ scale: 1, opacity: 1 }}
@@ -247,17 +259,13 @@ function TinderCard({
 function StackCard({
   children,
   index,
-  total,
 }: {
   children: React.ReactNode;
   index: number; // 0 = directly behind top, 1 = next, ...
-  total: number;
+  total?: number;
 }) {
-  // Scale: 1.0 (front) → 0.95 → 0.90
   const scale = 1 - (index + 1) * 0.05;
-  // Y offset: 0 → 12 → 24 (Apple Smart Stack style)
   const yOffset = (index + 1) * 12;
-  // Opacity: diminish deeper cards
   const opacity = index === 0 ? 0.95 : index === 1 ? 0.7 : 0.4;
 
   return (
@@ -265,16 +273,13 @@ function StackCard({
       className="absolute inset-0 will-change-transform"
       style={{ zIndex: 40 - index }}
       initial={false}
-      animate={{
-        scale,
-        y: yOffset,
-        opacity,
-      }}
+      animate={{ scale, y: yOffset, opacity }}
       transition={{
         type: "spring",
-        stiffness: 300,
-        damping: 25,
-        mass: 0.8,
+        stiffness: 200,
+        damping: 22,
+        mass: 1,
+        duration: 0.6,
       }}
     >
       {children}
@@ -298,12 +303,10 @@ function CardShell({
   return (
     <div className={cn("relative w-full h-full rounded-[28px] overflow-hidden shadow-2xl", glow)}>
       <div className={cn("absolute inset-0 bg-gradient-to-br", gradient)} />
-      {/* Decorative orbs */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-14 -left-14 w-52 h-52 rounded-full bg-white/8 blur-3xl" />
         <div className="absolute top-1/4 right-1/3 w-20 h-20 rounded-full bg-white/[0.04]" />
-        {/* Dot grid */}
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -409,7 +412,6 @@ function MiniCardContent({
    DOT INDICATORS
    ═══════════════════════════════════════════════════════════════ */
 
-/* Horizontal dots — bottom (for card index in current level) */
 function HorizontalDots({ total, current }: { total: number; current: number }) {
   if (total <= 1) return null;
   const maxDots = 7;
@@ -435,7 +437,7 @@ function HorizontalDots({ total, current }: { total: number; current: number }) 
               backgroundColor: isActive ? "var(--color-primary, #E8364F)" : distance <= 1 ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.1)",
               scale: isActive ? 1 : distance <= 1 ? 0.9 : 0.7,
             }}
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.5 }}
           />
         );
       })}
@@ -443,7 +445,6 @@ function HorizontalDots({ total, current }: { total: number; current: number }) 
   );
 }
 
-/* Vertical dots — right side (Apple Smart Stack style) */
 function VerticalDots({ total, current }: { total: number; current: number }) {
   if (total <= 1) return null;
   const maxDots = 7;
@@ -473,7 +474,7 @@ function VerticalDots({ total, current }: { total: number; current: number }) {
                   : "rgba(0,0,0,0.1)",
               scale: isActive ? 1 : distance <= 1 ? 0.9 : 0.7,
             }}
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25, duration: 0.5 }}
           />
         );
       })}
@@ -500,7 +501,7 @@ function LevelBreadcrumb({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 8 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.35 }}
         className="flex items-center gap-2 mb-4 h-8"
       >
         {level === "products" ? (
@@ -548,8 +549,10 @@ export default function SwipeableCardStack({
   const [productIndex, setProductIndex] = useState(0);
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [verticalAnimating, setVerticalAnimating] = useState(false);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
+  const touchHandled = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   /* ── Derive brands ── */
@@ -582,43 +585,79 @@ export default function SwipeableCardStack({
   const currentIndex = level === "brands" ? brandIndex : productIndex;
   const setCurrentIndex = level === "brands" ? setBrandIndex : setProductIndex;
 
-  /* ── Apple Smart Stack: Vertical navigation ── */
+  /* ── Apple Smart Stack: Vertical navigation with animation lock ── */
   const goVertical = useCallback(
     (direction: "up" | "down") => {
-      if (isAnimating) return;
+      if (isAnimating || verticalAnimating) return;
       const maxIdx = currentItems.length - 1;
       if (direction === "up" && currentIndex < maxIdx) {
+        setVerticalAnimating(true);
         setCurrentIndex((i) => i + 1);
+        setTimeout(() => setVerticalAnimating(false), 500);
       } else if (direction === "down" && currentIndex > 0) {
+        setVerticalAnimating(true);
         setCurrentIndex((i) => i - 1);
+        setTimeout(() => setVerticalAnimating(false), 500);
       }
     },
-    [isAnimating, currentItems.length, currentIndex, setCurrentIndex]
+    [isAnimating, verticalAnimating, currentItems.length, currentIndex, setCurrentIndex]
   );
 
-  /* ── Touch handlers for vertical swipe ── */
-  const handleTouchStart = (e: React.TouchEvent) => {
+  /* ═══════════════════════════════════════════════════════════════
+     TOUCH HANDLING — Unified gesture detection
+
+     Key fix: We use touchStart to record origin, touchMove to detect
+     direction intent (vertical vs horizontal), and preventDefault to
+     stop page scrolling. Only vertical gestures are handled here;
+     horizontal ones are left to framer-motion's drag system.
+     ═══════════════════════════════════════════════════════════════ */
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
     touchStartX.current = e.touches[0].clientX;
-  };
+    touchHandled.current = false;
+  }, []);
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const dy = touchStartY.current - e.changedTouches[0].clientY;
-    const dx = Math.abs(touchStartX.current - e.changedTouches[0].clientX);
-    // Only trigger vertical if it's more vertical than horizontal
-    if (Math.abs(dy) > VERTICAL_DRAG_THRESHOLD && Math.abs(dy) > dx * 1.2) {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // Always prevent default to stop page scrolling in the card area
+    e.preventDefault();
+
+    if (touchHandled.current) return;
+
+    const dy = touchStartY.current - e.touches[0].clientY;
+    const dx = touchStartX.current - e.touches[0].clientX;
+    const absDy = Math.abs(dy);
+    const absDx = Math.abs(dx);
+
+    // Only handle vertical if clearly vertical intent (more Y than X by 1.5x)
+    if (absDy > VERTICAL_DRAG_THRESHOLD && absDy > absDx * 1.5) {
+      touchHandled.current = true;
       goVertical(dy > 0 ? "up" : "down");
     }
-  };
+    // Horizontal gestures are handled by framer-motion drag — do nothing
+  }, [goVertical]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
+      e.preventDefault();
       if (Math.abs(e.deltaY) > 25) {
         goVertical(e.deltaY > 0 ? "up" : "down");
       }
     },
     [goVertical]
   );
+
+  /* ── Prevent default on the container for touchmove (native) ── */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const preventScroll = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    el.addEventListener("touchmove", preventScroll, { passive: false });
+    return () => {
+      el.removeEventListener("touchmove", preventScroll);
+    };
+  }, []);
 
   /* ── Level transitions ── */
   const enterBrand = useCallback((brand: Brand) => {
@@ -627,7 +666,7 @@ export default function SwipeableCardStack({
     setProductIndex(0);
     setTimeout(() => {
       setLevel("products");
-      setIsAnimating(false);
+      setTimeout(() => setIsAnimating(false), 400);
     }, 50);
   }, []);
 
@@ -635,7 +674,7 @@ export default function SwipeableCardStack({
     setIsAnimating(true);
     setLevel("brands");
     setSelectedBrandId(null);
-    setTimeout(() => setIsAnimating(false), 300);
+    setTimeout(() => setIsAnimating(false), 500);
   }, []);
 
   /* ── Swipe handlers ── */
@@ -648,7 +687,6 @@ export default function SwipeableCardStack({
   );
 
   const handleBrandSwipeLeft = useCallback(() => {
-    // Skip to next brand
     if (brandIndex < brands.length - 1) {
       setBrandIndex((i) => i + 1);
     }
@@ -703,9 +741,10 @@ export default function SwipeableCardStack({
 
           <div
             ref={containerRef}
-            className="absolute inset-0"
+            className="absolute inset-0 overflow-hidden"
+            style={{ touchAction: "none" }}      /* ← CRITICAL: stops ALL browser scroll/zoom */
             onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
             onWheel={handleWheel}
           >
             <AnimatePresence mode="popLayout">
@@ -716,7 +755,7 @@ export default function SwipeableCardStack({
                   initial={{ opacity: 0, scale: 0.92, x: -40 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.92, x: -40 }}
-                  transition={{ type: "spring", stiffness: 280, damping: 26 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 24, mass: 1, duration: 0.6 }}
                 >
                   {/* Stack cards behind */}
                   {visibleItems.slice(1).map((item, i) => {
@@ -755,7 +794,7 @@ export default function SwipeableCardStack({
                   initial={{ opacity: 0, scale: 0.92, x: 40 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.92, x: 40 }}
-                  transition={{ type: "spring", stiffness: 280, damping: 26 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 24, mass: 1, duration: 0.6 }}
                 >
                   {/* Stack cards behind */}
                   {visibleItems.slice(1).map((item, i) => {
