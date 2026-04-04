@@ -43,7 +43,8 @@ const ROTATION_RANGE = 15;            // Daha az rotasyon — daha temiz görün
 const THROW_DURATION = 1.2;             // Cok yavas throw — net gorulebilir
 
 const VERTICAL_DRAG_THRESHOLD = 35;
-const VERTICAL_DEBOUNCE_MS = 900;       // Yavas dikey gecis
+const VERTICAL_DEBOUNCE_MS = 1400;      // Cok yavas dikey gecis (animasyon + bekleme)
+const VERTICAL_SLIDE_MS = 700;          // Dikey kayma animasyon suresi
 const MAX_VISIBLE = 3;
 
 /* ── Gradients ── */
@@ -447,6 +448,7 @@ export default function SwipeableCardStack({
   const [productIndex, setProductIndex] = useState(0);
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [slideOut, setSlideOut] = useState<"up" | "down" | null>(null);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
   const touchHandled = useRef(false);
@@ -490,25 +492,39 @@ export default function SwipeableCardStack({
       if (isAnimating || verticalLock.current) return;
 
       if (level === "brands") {
-        // Markalar arasi gecis
+        // Markalar arasi gecis — ANIMASYONLU
         const maxIdx = brands.length - 1;
-        if (direction === "up" && brandIndex < maxIdx) {
-          verticalLock.current = true;
-          setBrandIndex((i) => i + 1);
-          setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
-        } else if (direction === "down" && brandIndex > 0) {
-          verticalLock.current = true;
-          setBrandIndex((i) => i - 1);
-          setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
-        }
+        const canGo =
+          (direction === "up" && brandIndex < maxIdx) ||
+          (direction === "down" && brandIndex > 0);
+
+        if (!canGo) return;
+
+        verticalLock.current = true;
+
+        // 1) Slide-out animasyonu baslat
+        setSlideOut(direction);
+
+        // 2) Animasyon ortasinda index degistir (kart gozden kaybolunca)
+        setTimeout(() => {
+          setBrandIndex((i) => direction === "up" ? i + 1 : i - 1);
+          setSlideOut(null); // yeni kart pozisyonunda gorunur
+        }, VERTICAL_SLIDE_MS);
+
+        // 3) Debounce kilidi
+        setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
       } else {
         // Urun seviyesinde dikey = markalara geri don
         verticalLock.current = true;
-        backToBrands();
+        setSlideOut(direction);
+        setTimeout(() => {
+          backToBrands();
+          setSlideOut(null);
+        }, VERTICAL_SLIDE_MS);
         setTimeout(() => { verticalLock.current = false; }, VERTICAL_DEBOUNCE_MS);
       }
     },
-    [isAnimating, level, brands.length, brandIndex]
+    [isAnimating, level, brands.length, brandIndex, backToBrands]
   );
 
   /* ═══════════════════════════════════════════════════════════════
@@ -686,7 +702,18 @@ export default function SwipeableCardStack({
           >
             {level === "brands" ? (
               /* ═══════ BRANDS LAYER ═══════ */
-              <div className="absolute inset-0">
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: slideOut
+                    ? `translateY(${slideOut === "up" ? "-110%" : "110%"})`
+                    : "translateY(0)",
+                  opacity: slideOut ? 0 : 1,
+                  transition: slideOut
+                    ? `transform ${VERTICAL_SLIDE_MS}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${VERTICAL_SLIDE_MS}ms ease-out`
+                    : "none",
+                }}
+              >
                 {visibleBrands.slice(1).map((brand, i) => (
                   <StackCardCSS key={`bs-${brand.id}`} index={i}>
                     <MiniCardContent gradient={brand.gradient.bg} emoji={brand.emoji} label={brand.name} />
@@ -710,7 +737,18 @@ export default function SwipeableCardStack({
               </div>
             ) : (
               /* ═══════ PRODUCTS LAYER ═══════ */
-              <div className="absolute inset-0">
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: slideOut
+                    ? `translateY(${slideOut === "up" ? "-110%" : "110%"})`
+                    : "translateY(0)",
+                  opacity: slideOut ? 0 : 1,
+                  transition: slideOut
+                    ? `transform ${VERTICAL_SLIDE_MS}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${VERTICAL_SLIDE_MS}ms ease-out`
+                    : "none",
+                }}
+              >
                 {visibleProducts.slice(1).map((gift, i) => {
                   const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
                   return (
