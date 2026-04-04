@@ -180,7 +180,7 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5 py-1"
+        className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5 py-1 mt-2"
       >
         <button
           onClick={() => setSelectedCategory(null)}
