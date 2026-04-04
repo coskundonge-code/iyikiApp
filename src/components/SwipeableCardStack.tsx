@@ -94,6 +94,7 @@ function TinderCard({
   leftIcon: LeftIcon,
   rightColor = "emerald",
   leftColor = "red",
+  noThrow = false,
 }: {
   children: React.ReactNode;
   onSwipeRight: () => void;
@@ -105,6 +106,7 @@ function TinderCard({
   leftIcon: React.ComponentType<{ className?: string }>;
   rightColor?: string;
   leftColor?: string;
+  noThrow?: boolean;
 }) {
   const x = useMotionValue(0);
   const controls = useAnimation();
@@ -129,6 +131,19 @@ function TinderCard({
     const swipeLeft =
       offset.x < -SWIPE_POSITION_THRESHOLD ||
       (velocity.x < -SWIPE_VELOCITY_THRESHOLD && offset.x < -15);
+
+    if (noThrow) {
+      // Karusel modu: kart firlamaz, snap-back yapar, sonra callback
+      await controls.start({
+        x: 0,
+        rotate: 0,
+        opacity: 1,
+        transition: { type: "spring", stiffness: 300, damping: 25 },
+      });
+      if (swipeRight) onSwipeRight();
+      else if (swipeLeft) onSwipeLeft();
+      return;
+    }
 
     if (swipeRight) {
       await controls.start({
@@ -621,22 +636,20 @@ export default function SwipeableCardStack({
     if (brand) enterBrand(brand);
   }, [brands, brandIndex, enterBrand]);
 
-  // -- PRODUCTS --
+  // -- PRODUCTS (karusel: saga = sonraki, sola = onceki) --
   const handleProductSwipeRight = useCallback(() => {
-    // Saga kaydir = ONCEKI urun. Ilk urundeyse DUR.
-    if (productIndex > 0) {
-      setProductIndex((i) => i - 1);
-    }
-    // else: ilk urun — hicbir sey yapma, kart yerine geri doner
-  }, [productIndex]);
-
-  const handleProductSwipeLeft = useCallback(() => {
-    // Sola kaydir = sonraki urun. Son urundeyse DUR (marka degisimi sadece dikey swipe ile olur).
+    // Saga kaydir = SONRAKI urun. Son urundeyse DUR.
     if (productIndex < brandProducts.length - 1) {
       setProductIndex((i) => i + 1);
     }
-    // else: son urun — hicbir sey yapma, kart yerine geri doner
   }, [productIndex, brandProducts.length]);
+
+  const handleProductSwipeLeft = useCallback(() => {
+    // Sola kaydir = ONCEKI urun. Ilk urundeyse DUR.
+    if (productIndex > 0) {
+      setProductIndex((i) => i - 1);
+    }
+  }, [productIndex]);
 
   // -- GONDER butonu (sadece tiklamayla) --
   const handleSendGift = useCallback(() => {
@@ -738,27 +751,20 @@ export default function SwipeableCardStack({
                     : "none",
                 }}
               >
-                {visibleProducts.slice(1).map((gift, i) => {
-                  const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
-                  return (
-                    <StackCardCSS key={`ps-${gift.id}`} index={i}>
-                      <MiniCardContent gradient={colors.bg} emoji={gift.image} label={gift.name} />
-                    </StackCardCSS>
-                  );
-                })}
-                {visibleProducts[0] && (
+                {brandProducts[productIndex] && (
                   <TinderCard
-                    key={`pt-${visibleProducts[0].id}-${productIndex}`}
+                    key={`pt-${selectedBrandId}`}
                     onSwipeRight={handleProductSwipeRight}
                     onSwipeLeft={handleProductSwipeLeft}
-                    rightLabel="ONCEKI"
-                    leftLabel="SONRAKI"
+                    noThrow
+                    rightLabel="SONRAKI"
+                    leftLabel="ONCEKI"
                     rightIcon={ChevronRight}
                     leftIcon={ChevronRight}
                     rightColor="teal"
                     leftColor="orange"
                   >
-                    <ProductContent gift={visibleProducts[0]} />
+                    <ProductContent gift={brandProducts[productIndex]} />
                   </TinderCard>
                 )}
               </div>
@@ -779,7 +785,7 @@ export default function SwipeableCardStack({
         {level === "products" ? (
           <>
             <button
-              onClick={() => triggerButtonSwipe("left")}
+              onClick={handleProductSwipeLeft}
               className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-transform active:scale-90"
             >
               <ChevronRight className="w-5 h-5 text-orange-400 rotate-180" />
@@ -799,7 +805,7 @@ export default function SwipeableCardStack({
             </button>
 
             <button
-              onClick={() => triggerButtonSwipe("right")}
+              onClick={handleProductSwipeRight}
               className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
             >
               <ChevronRight className="w-5 h-5 text-teal-400" />
