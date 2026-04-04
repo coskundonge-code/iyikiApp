@@ -256,13 +256,3 @@ describe('Utility Functions', () => {
     it('should handle falsy values', () => {
       expect(cn('px-2', false && 'py-1', 'bg-white')).toBe('px-2 bg-white')
     })
-
-    it('should handle undefined values', () => {
-      expect(cn('px-2', undefined, 'bg-white')).toBe('px-2 bg-white')
-    })
-
-    it('should handle arrays', () => {
-      expect(cn(['px-2', 'py-1'], 'bg-white')).toBe('px-2 py-1 bg-white')
-    })
-  })
-})

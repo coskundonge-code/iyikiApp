@@ -394,7 +394,8 @@ export async function getSponsorImpact(sponsorId?: string): Promise<SponsorImpac
 
     return result;
   } catch (err) {
-    console.error('Sponsor impact error:', err);
+    const message = err instanceof Error ? err.message : 'Failed to fetch sponsor impact';
+    console.error('Sponsor impact error:', message);
     return [];
   }
 }

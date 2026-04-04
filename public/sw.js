@@ -214,15 +214,4 @@ self.addEventListener('notificationclick', (event) => {
       clients.matchAll({ type: 'window' }).then((clientList) => {
         // Check if app is already open
         for (const client of clientList) {
-          if (client.url === '/' && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Open app if not already open
-        if (clients.openWindow) {
-          return clients.openWindow('/home');
-        }
-      })
-    );
-  }
-});
+          if (client.url === '/' && 'focus' in clien

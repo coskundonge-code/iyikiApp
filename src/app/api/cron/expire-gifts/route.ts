@@ -237,14 +237,11 @@ async function runLocalLogic(): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error) {
-    console.error('[Cron] Local logic error:', error);
-    throw error;
+    console.error('[Cron] Expire gifts error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
   }
-}
-
-/**
- * POST - Also allow POST requests for compatibility
- */
-export async function POST(request: NextRequest) {
-  return GET(request);
 }

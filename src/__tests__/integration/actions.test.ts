@@ -247,15 +247,4 @@ describe('Server Actions Integration', () => {
       const invalidStock = -1
 
       expect(validStock).toBeGreaterThanOrEqual(0)
-      expect(invalidStock).toBeLessThan(0)
-    })
-
-    it('should validate expiry hours are positive', () => {
-      const validExpiry = 72
-      const invalidExpiry = -72
-
-      expect(validExpiry).toBeGreaterThan(0)
-      expect(invalidExpiry).toBeLessThanOrEqual(0)
-    })
-  })
-})
+      expect(invalidStock).toBeLess

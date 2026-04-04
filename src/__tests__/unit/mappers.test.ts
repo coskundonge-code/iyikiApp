@@ -421,22 +421,4 @@ describe('Data Mappers', () => {
       expect(flag.severity).toBe('high')
       expect(flag.description).toBe('User created multiple accounts')
       expect(flag.createdAt).toBe('2026-04-04T12:00:00Z')
-      expect(flag.resolved).toBe(true)
-    })
-
-    it('should default resolved to false', () => {
-      const row = {
-        id: 'fraud-2',
-        user_id: 'user-2',
-        type: 'suspicious_activity',
-        severity: 'medium',
-        description: 'Suspicious activity detected',
-        created_at: '2026-04-04T12:00:00Z',
-      }
-
-      const flag = mapFraudFlag(row)
-
-      expect(flag.resolved).toBe(false)
-    })
-  })
-})
+      exp

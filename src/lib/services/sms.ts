@@ -196,10 +196,11 @@ export async function sendSmsNotification(phone: string, message: string): Promi
     const success = await provider.send(phone, truncatedMessage);
     if (!success) {
       console.error('[SMS] Failed to send SMS to', phone);
+      return false;
     }
-    return success;
+    return true;
   } catch (error) {
-    console.error('[SMS] Error in sendSmsNotification:', error);
+    console.error('[SMS] Error sending SMS:', error);
     return false;
   }
 }

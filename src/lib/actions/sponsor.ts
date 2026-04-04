@@ -292,6 +292,7 @@ export async function getSponsorImpactReport(
  * Update sponsor campaign
  */
 export async function updateSponsorCampaign(
+  sponsorId: string,
   campaignId: string,
   updates: Partial<{
     name: string;
@@ -316,7 +317,8 @@ export async function updateSponsorCampaign(
     const { error } = await supabase
       .from('campaigns')
       .update(updatePayload)
-      .eq('id', campaignId);
+      .eq('id', campaignId)
+      .eq('sponsor_id', sponsorId);
 
     if (error) {
       return { success: false, error: error.message };

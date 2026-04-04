@@ -165,6 +165,5 @@ async function sendSinglePushNotification(
  * Validate FCM token format
  */
 export function isValidFcmToken(token: string): boolean {
-  // FCM tokens are typically long alphanumeric strings
-  return typeof token === 'string' && token.length > 100;
+  return typeof token === 'string' && token.length > 0;
 }

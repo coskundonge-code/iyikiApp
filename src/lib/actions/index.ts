@@ -547,7 +547,8 @@ export async function getAdminStats(): Promise<ServerActionResponse<DailyStats>>
       supabase
         .from('gift_actions')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'social_pool'),
+        .eq('status', 'distributed')
+        .gte('distributed_at', `${today}T00:00:00`),
     ]);
 
     return {
@@ -555,8 +556,8 @@ export async function getAdminStats(): Promise<ServerActionResponse<DailyStats>>
         totalGiftsSent: giftsToday?.length || 0,
         totalGiftsRedeemed: redeemedToday?.length || 0,
         totalNewUsers: newUsersToday?.length || 0,
-        totalAskida: askidaData?.length || 0,
         activeUsers: activeUsersData?.length || 0,
+        totalAskida: askidaData?.length || 0,
       },
       error: null,
     };

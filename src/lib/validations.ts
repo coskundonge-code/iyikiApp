@@ -160,10 +160,7 @@ export const paginationSchemaWithDefaults = paginationSchema
       const limit = data.limit ?? 10;
       return page > 0 && limit > 0 && limit <= 100;
     },
-    'Geçerli sayfa ve limit değerleri gereklidir'
+    'Geçerli sayfa ve limit olmalıdır'
   );
 
-export type PaginationInputWithDefaults = z.infer<typeof paginationSchemaWithDefaults> & {
-  page: number;
-  limit: number;
-};
+export type PaginationWithDefaults = z.infer<typeof paginationSchemaWithDefaults>; 

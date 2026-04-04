@@ -233,17 +233,3 @@ export function meetsContrastRatio(
 
   return level === 'AAA' ? contrast >= 7 : contrast >= 4.5;
 }
-
-/**
- * Accessibility utilities object with common helpers
- */
-export const a11y = {
-  srOnly,
-  getSkipLinkProps,
-  announce,
-  useFocusTrap,
-  useKeyboardNavigation,
-  meetsContrastRatio,
-};
-
-export default a11y;

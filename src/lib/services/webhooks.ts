@@ -309,18 +309,23 @@ export async function resendFailedWebhook(
       partner.api_secret || ''
     );
 
-    await sendWebhookWithRetry(
-      partner.webhook_url,
-      logEntry.payload,
-      signature,
-      partnerId,
-      event,
-      0
-    );
+    const response = await fetch(partner.webhook_url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Signature': signature,
+        'X-Webhook-Timestamp': new Date().toISOString(),
+      },
+      body: JSON.stringify(logEntry.payload),
+    });
 
-    return true;
+    const isSuccess = response.ok;
+    console.log('[Webhooks] Webhook delivery', isSuccess ? 'succeeded' : 'failed', 'for partner', partnerId);
+
+    return isSuccess;
   } catch (error) {
-    console.error('[Webhooks] Error resending webhook:', error);
+    console.error('[Webhooks] Error delivering webhook:', error);
     return false;
   }
 }
+   

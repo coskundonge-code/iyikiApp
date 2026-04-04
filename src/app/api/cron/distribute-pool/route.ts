@@ -293,10 +293,3 @@ async function runLocalLogic(): Promise<NextResponse> {
     throw error;
   }
 }
-
-/**
- * POST - Also allow POST requests for compatibility
- */
-export async function POST(request: NextRequest) {
-  return GET(request);
-}

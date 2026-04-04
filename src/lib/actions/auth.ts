@@ -116,7 +116,7 @@ export async function signOut(): Promise<AuthResponse<{ success: boolean }>> {
 
     redirect('/login')
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to sign out'
-    return { data: null, error: message }
+    const message = err instanceof Error ? err.message : 'Failed to sign out';
+    return { data: null, error: message };
   }
 }

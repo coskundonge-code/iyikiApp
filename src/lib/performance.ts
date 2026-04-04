@@ -319,16 +319,20 @@ export const perf = {
    */
   mark: (name: string) => {
     if (typeof window !== 'undefined' && typeof window.performance?.mark === 'function') {
-      performance.mark(name);
+      window.performance.mark(name);
     }
   },
 
   /**
-   * Measure between two marks
+   * Measure performance between two marks
    */
-  measure_: (name: string, startMark: string, endMark: string) => {
+  measureBetweenMarks: (name: string, startMark: string, endMark: string) => {
     if (typeof window !== 'undefined' && typeof window.performance?.measure === 'function') {
-      performance.measure(name, startMark, endMark);
+      try {
+        window.performance.measure(name, startMark, endMark);
+      } catch (error) {
+        console.debug('[Performance] Could not measure between marks:', error);
+      }
     }
   },
 };

@@ -425,12 +425,6 @@ export async function claimPlusOneOffer(
       return { data: null, error: insertError.message };
     }
 
-    // Unlock plus-one achievement
-    await supabase.rpc('unlock_achievement', {
-      p_user_id: user.id,
-      p_achievement_id: 'plus-one',
-    });
-
     return {
       data: { success: true, message: 'Plus one offer claimed successfully' },
       error: null,

@@ -310,11 +310,11 @@ export async function createPartnerCampaign(
       .select('id')
       .single();
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (error || !result) {
+      return { success: false, error: error?.message || 'Failed to create campaign' };
     }
 
-    return { success: true, campaignId: result?.id };
+    return { success: true, campaignId: result.id };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to create campaign';
     return { success: false, error: message };

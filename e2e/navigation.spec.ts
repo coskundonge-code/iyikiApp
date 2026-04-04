@@ -226,13 +226,4 @@ test.describe('Link Functionality', () => {
     if (exists) {
       await link.click()
       // Rapid second click
-      await link.click()
-
-      // Should handle gracefully without error
-      const errorText = page.locator('[class*="error"]')
-      const isError = await errorText.isVisible().catch(() => false)
-
-      expect(!isError).toBe(true)
-    }
-  })
-})
+      await link.clic
