@@ -1,12 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
 import { MapPin, Plus } from "lucide-react";
-import { MOCK_PARTNERS } from "@/lib/mock-data";
+import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function PartnerBranchesPage() {
-  const partner = MOCK_PARTNERS[0];
+  const { partners, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const partner = partners[0];
+
+  if (!partner) {
+    return <div className="p-8 text-center text-muted text-sm">Partner bulunamadı</div>;
+  }
 
   return (
     <div className="space-y-4">

@@ -1,17 +1,28 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Gift, ShieldAlert, Heart, TrendingUp, ArrowUpRight } from "lucide-react";
-import { MOCK_USERS, MOCK_GIFT_ACTIONS, MOCK_FRAUD_FLAGS, MOCK_GIFTS } from "@/lib/mock-data";
+import { Users, Gift, ShieldAlert, Heart, TrendingUp } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 import { formatRelativeTime, getStatusLabel, getStatusColor } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 export default function AdminDashboard() {
-  const totalUsers = MOCK_USERS.filter((u) => u.role === "user").length;
-  const totalGifts = MOCK_GIFT_ACTIONS.length;
-  const redeemedGifts = MOCK_GIFT_ACTIONS.filter((a) => a.status === "claimed").length;
-  const askidaGifts = MOCK_GIFT_ACTIONS.filter((a) => a.status === "social_pool" || a.status === "distributed").length;
-  const openFraud = MOCK_FRAUD_FLAGS.filter((f) => !f.resolved).length;
+  const { allUsers, giftActions, fraudFlags, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const totalUsers = allUsers.filter((u) => u.role === "user").length;
+  const totalGifts = giftActions.length;
+  const redeemedGifts = giftActions.filter((a) => a.status === "claimed").length;
+  const askidaGifts = giftActions.filter((a) => a.status === "social_pool" || a.status === "distributed").length;
+  const openFraud = fraudFlags.filter((f) => !f.resolved).length;
   const redeemRate = totalGifts > 0 ? Math.round((redeemedGifts / totalGifts) * 100) : 0;
 
   const stats = [
@@ -49,7 +60,7 @@ export default function AdminDashboard() {
           <h3 className="font-semibold text-foreground text-sm">Son Hediye İşlemleri</h3>
         </div>
         <div className="divide-y divide-border">
-          {MOCK_GIFT_ACTIONS.slice(0, 10).map((action) => (
+          {giftActions.slice(0, 10).map((action) => (
             <div key={action.id} className="flex items-center gap-3 p-3 hover:bg-card-hover transition-colors">
               <span className="text-xl">{action.gift.image}</span>
               <div className="flex-1 min-w-0">
@@ -76,7 +87,7 @@ export default function AdminDashboard() {
           <span className="text-xs text-red-500 font-medium">{openFraud} açık</span>
         </div>
         <div className="divide-y divide-border">
-          {MOCK_FRAUD_FLAGS.map((flag) => (
+          {fraudFlags.map((flag) => (
             <div key={flag.id} className="flex items-center gap-3 p-3">
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center",

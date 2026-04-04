@@ -1,12 +1,28 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, TrendingUp, DollarSign, Users, Gift } from "lucide-react";
-import { MOCK_SPONSORS } from "@/lib/mock-data";
+import { Heart, TrendingUp, DollarSign, Gift } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function SponsorDashboard() {
-  const sponsor = MOCK_SPONSORS[0]; // Garanti BBVA
+  const { sponsors, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const sponsor = sponsors[0];
+
+  if (!sponsor) {
+    return <div className="p-8 text-center text-muted text-sm">Sponsor bulunamadı</div>;
+  }
+
   const usedPct = Math.round((sponsor.spent / sponsor.budget) * 100);
 
   const stats = [

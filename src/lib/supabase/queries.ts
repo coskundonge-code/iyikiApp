@@ -1,15 +1,17 @@
 import { createClient } from './client';
-import { mapUser, mapGift, mapGiftAction, mapPartner, mapBranch, mapSponsor, mapNotification, mapFraudFlag } from './mappers';
-import type { User, Gift, GiftAction, Partner, Sponsor, Notification, FraudFlag, Branch } from '@/types';
+import { mapUser, mapGift, mapGiftAction, mapPartner, mapSponsor, mapNotification, mapFraudFlag } from './mappers';
+import type { User, Gift, GiftAction, Partner, Sponsor, Notification, FraudFlag } from '@/types';
 
-const supabase = createClient();
+function getSupabase() {
+  return createClient();
+}
 
 // ==========================================
 // USERS
 // ==========================================
 
 export async function fetchCurrentUser(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('users')
     .select('*')
     .eq('id', userId)
@@ -20,7 +22,7 @@ export async function fetchCurrentUser(userId: string): Promise<User | null> {
 }
 
 export async function updateUser(userId: string, updates: Partial<Record<string, unknown>>): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('users')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', userId);
@@ -29,7 +31,7 @@ export async function updateUser(userId: string, updates: Partial<Record<string,
 }
 
 export async function fetchAllUsers(): Promise<User[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('users')
     .select('*')
     .order('created_at', { ascending: false });
@@ -43,7 +45,7 @@ export async function fetchAllUsers(): Promise<User[]> {
 // ==========================================
 
 export async function fetchGifts(): Promise<Gift[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('gifts')
     .select(`
       *,
@@ -62,7 +64,7 @@ export async function fetchGifts(): Promise<Gift[]> {
 // ==========================================
 
 export async function fetchGiftActions(userId: string, phone: string): Promise<GiftAction[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('gift_actions')
     .select(`
       *,
@@ -76,7 +78,7 @@ export async function fetchGiftActions(userId: string, phone: string): Promise<G
 }
 
 export async function fetchAllGiftActions(): Promise<GiftAction[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('gift_actions')
     .select(`
       *,
@@ -99,7 +101,7 @@ export async function createGiftAction(action: {
   redeemCode: string;
   expiresAt: string;
 }): Promise<GiftAction | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('gift_actions')
     .insert({
       gift_id: action.giftId,
@@ -121,7 +123,7 @@ export async function createGiftAction(action: {
 }
 
 export async function redeemGiftAction(actionId: string, branchId: string): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('gift_actions')
     .update({
       status: 'claimed',
@@ -138,7 +140,7 @@ export async function redeemGiftAction(actionId: string, branchId: string): Prom
 // ==========================================
 
 export async function fetchPartners(): Promise<Partner[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('partners')
     .select('*, branches (*)')
     .eq('is_active', true);
@@ -152,7 +154,7 @@ export async function fetchPartners(): Promise<Partner[]> {
 // ==========================================
 
 export async function fetchSponsors(): Promise<Sponsor[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('sponsors')
     .select('*')
     .order('created_at', { ascending: false });
@@ -166,7 +168,7 @@ export async function fetchSponsors(): Promise<Sponsor[]> {
 // ==========================================
 
 export async function fetchNotifications(userId: string): Promise<Notification[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('notifications')
     .select('*')
     .eq('user_id', userId)
@@ -178,7 +180,7 @@ export async function fetchNotifications(userId: string): Promise<Notification[]
 }
 
 export async function markNotificationRead(notifId: string): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('notifications')
     .update({ is_read: true })
     .eq('id', notifId);
@@ -193,7 +195,7 @@ export async function createNotification(notif: {
   message: string;
   actionId?: string;
 }): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('notifications')
     .insert({
       user_id: notif.userId,
@@ -211,7 +213,7 @@ export async function createNotification(notif: {
 // ==========================================
 
 export async function fetchFraudFlags(): Promise<FraudFlag[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('fraud_flags')
     .select('*')
     .order('created_at', { ascending: false });
@@ -225,11 +227,11 @@ export async function fetchFraudFlags(): Promise<FraudFlag[]> {
 // ==========================================
 
 export async function decrementGiftStock(giftId: string): Promise<boolean> {
-  const { error } = await supabase.rpc('decrement_gift_stock', { p_gift_id: giftId });
+  const { error } = await getSupabase().rpc('decrement_gift_stock', { p_gift_id: giftId });
   return !error;
 }
 
 export async function incrementUserScore(userId: string): Promise<boolean> {
-  const { error } = await supabase.rpc('increment_user_score', { p_user_id: userId });
+  const { error } = await getSupabase().rpc('increment_user_score', { p_user_id: userId });
   return !error;
 }

@@ -1,14 +1,30 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Package, Gift, TrendingUp, MapPin, BarChart3 } from "lucide-react";
-import { MOCK_PARTNERS, MOCK_GIFTS, MOCK_GIFT_ACTIONS } from "@/lib/mock-data";
+import { Package, Gift, TrendingUp, MapPin } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 import { formatRelativeTime, getStatusLabel, getStatusColor, cn } from "@/lib/utils";
 
 export default function PartnerDashboard() {
-  const partner = MOCK_PARTNERS[0]; // Starbucks
-  const partnerGifts = MOCK_GIFTS.filter((g) => g.partnerId === partner.id);
-  const partnerActions = MOCK_GIFT_ACTIONS.filter((a) => partnerGifts.some((g) => g.id === a.giftId));
+  const { partners, gifts, giftActions, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const partner = partners[0];
+
+  if (!partner) {
+    return <div className="p-8 text-center text-muted text-sm">Partner bulunamadı</div>;
+  }
+
+  const partnerGifts = gifts.filter((g) => g.partnerId === partner.id);
+  const partnerActions = giftActions.filter((a) => partnerGifts.some((g) => g.id === a.giftId));
   const redeemRate = partner.totalGifts > 0 ? Math.round((partner.totalRedeemed / partner.totalGifts) * 100) : 0;
 
   const stats = [

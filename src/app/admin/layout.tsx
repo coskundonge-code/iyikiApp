@@ -28,11 +28,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const logout = useAppStore((s) => s.logout);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const loadAdminData = useAppStore((s) => s.loadAdminData);
+
   useEffect(() => {
     if (!isAuthenticated || currentUser?.role !== "admin") {
       router.replace("/login");
+    } else {
+      loadAdminData();
     }
-  }, [isAuthenticated, currentUser, router]);
+  }, [isAuthenticated, currentUser, router, loadAdminData]);
 
   if (!isAuthenticated || currentUser?.role !== "admin") return null;
 

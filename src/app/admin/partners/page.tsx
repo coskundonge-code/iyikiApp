@@ -1,14 +1,25 @@
 "use client";
 
-import { Building2, MapPin, Package } from "lucide-react";
-import { MOCK_PARTNERS } from "@/lib/mock-data";
+import { useEffect } from "react";
+import { Building2, MapPin } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function AdminPartnersPage() {
+  const { partners, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {MOCK_PARTNERS.map((partner) => {
+        {partners.map((partner) => {
           const redeemRate = partner.totalGifts > 0
             ? Math.round((partner.totalRedeemed / partner.totalGifts) * 100)
             : 0;

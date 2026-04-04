@@ -1,11 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import { BarChart3, TrendingUp, Gift, Users } from "lucide-react";
-import { MOCK_PARTNERS } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import { useAppStore } from "@/lib/store";
 
 export default function PartnerReportsPage() {
-  const partner = MOCK_PARTNERS[0];
+  const { partners, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const partner = partners[0];
+
+  if (!partner) {
+    return <div className="p-8 text-center text-muted text-sm">Partner bulunamadı</div>;
+  }
+
   const redeemRate = Math.round((partner.totalRedeemed / partner.totalGifts) * 100);
 
   const weeklyData = [

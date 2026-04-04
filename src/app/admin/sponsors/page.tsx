@@ -1,14 +1,25 @@
 "use client";
 
+import { useEffect } from "react";
 import { Heart, TrendingUp } from "lucide-react";
-import { MOCK_SPONSORS } from "@/lib/mock-data";
+import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function AdminSponsorsPage() {
+  const { sponsors, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {MOCK_SPONSORS.map((sponsor) => {
+        {sponsors.map((sponsor) => {
           const usedPct = sponsor.budget > 0 ? Math.round((sponsor.spent / sponsor.budget) * 100) : 0;
 
           return (

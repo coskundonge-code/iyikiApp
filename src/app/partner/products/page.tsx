@@ -1,12 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Edit3, Package } from "lucide-react";
-import { MOCK_GIFTS } from "@/lib/mock-data";
+import { useEffect } from "react";
+import { Plus, Edit3 } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function PartnerProductsPage() {
+  const { gifts, partners, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const partner = partners[0];
+  const partnerGifts = partner ? gifts.filter((g) => g.partnerId === partner.id) : gifts;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -22,7 +35,7 @@ export default function PartnerProductsPage() {
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="divide-y divide-border">
-          {MOCK_GIFTS.filter((g) => g.partnerId === "partner-starbucks").map((gift) => (
+          {partnerGifts.map((gift) => (
             <div key={gift.id} className="flex items-center gap-3 p-4 hover:bg-card-hover transition-colors">
               <span className="text-3xl">{gift.image}</span>
               <div className="flex-1">

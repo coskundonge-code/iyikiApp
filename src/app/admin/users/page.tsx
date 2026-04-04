@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Shield, Ban, MoreVertical } from "lucide-react";
-import { MOCK_USERS } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 import { cn, getInitials, formatRelativeTime } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function AdminUsersPage() {
+  const { allUsers, isLoading, loadAdminData } = useAppStore();
   const [search, setSearch] = useState("");
 
-  const users = MOCK_USERS.filter(
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const users = allUsers.filter(
     (u) =>
       !search ||
       u.name?.toLowerCase().includes(search.toLowerCase()) ||

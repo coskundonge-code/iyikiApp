@@ -1,20 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
 import { ShieldAlert, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { MOCK_FRAUD_FLAGS } from "@/lib/mock-data";
+import { useAppStore } from "@/lib/store";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function AdminFraudPage() {
-  const openFlags = MOCK_FRAUD_FLAGS.filter((f) => !f.resolved);
-  const resolvedFlags = MOCK_FRAUD_FLAGS.filter((f) => f.resolved);
+  const { fraudFlags, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const openFlags = fraudFlags.filter((f) => !f.resolved);
+  const resolvedFlags = fraudFlags.filter((f) => f.resolved);
 
   return (
     <div className="space-y-6">
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card rounded-xl border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{MOCK_FRAUD_FLAGS.length}</p>
+          <p className="text-2xl font-bold text-foreground">{fraudFlags.length}</p>
           <p className="text-xs text-muted">Toplam Bayrak</p>
         </div>
         <div className="bg-red-50 rounded-xl border border-red-100 p-4 text-center">

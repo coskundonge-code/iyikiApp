@@ -1,9 +1,20 @@
 "use client";
 
-import { MOCK_GIFTS } from "@/lib/mock-data";
+import { useEffect } from "react";
+import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function AdminGiftsPage() {
+  const { gifts, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -16,7 +27,7 @@ export default function AdminGiftsPage() {
           <span>Durum</span>
         </div>
         <div className="divide-y divide-border">
-          {MOCK_GIFTS.map((gift) => (
+          {gifts.map((gift) => (
             <div key={gift.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 items-center p-3 hover:bg-card-hover transition-colors">
               <span className="text-2xl">{gift.image}</span>
               <div className="min-w-0">

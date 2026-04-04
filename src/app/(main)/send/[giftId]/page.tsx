@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Search, Send, Check, User, MessageSquare, Users } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { cn, getInitials } from "@/lib/utils";
 import { QUICK_NOTES } from "@/types";
-import { MOCK_USERS } from "@/lib/mock-data";
 import toast from "react-hot-toast";
 
 type Step = "recipient" | "note" | "success";
@@ -20,6 +19,12 @@ export default function SendGiftPage() {
   const gifts = useAppStore((s) => s.gifts);
   const currentUser = useAppStore((s) => s.currentUser);
   const sendGift = useAppStore((s) => s.sendGift);
+  const allUsers = useAppStore((s) => s.allUsers);
+  const loadAdminData = useAppStore((s) => s.loadAdminData);
+
+  useEffect(() => {
+    if (allUsers.length === 0) loadAdminData();
+  }, [allUsers.length, loadAdminData]);
 
   const gift = gifts.find((g) => g.id === giftId);
 
@@ -30,7 +35,7 @@ export default function SendGiftPage() {
   const [search, setSearch] = useState("");
   const [isSending, setIsSending] = useState(false);
 
-  const contacts = MOCK_USERS.filter(
+  const contacts = allUsers.filter(
     (u) => u.role === "user" && u.id !== currentUser?.id
   ).filter(
     (u) =>
@@ -39,7 +44,7 @@ export default function SendGiftPage() {
       u.phone.includes(search)
   );
 
-  const handleSelectContact = (user: typeof MOCK_USERS[0]) => {
+  const handleSelectContact = (user: typeof allUsers[0]) => {
     setRecipientPhone(user.phone);
     setRecipientName(user.name || "");
     setStep("note");
@@ -57,18 +62,16 @@ export default function SendGiftPage() {
     setStep("note");
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     setIsSending(true);
-    setTimeout(() => {
-      const result = sendGift(giftId, recipientPhone, recipientName, note || undefined);
-      if (result) {
-        setStep("success");
-        toast.success("Jestini yaptın!");
-      } else {
-        toast.error("Hediye gönderilemedi. Günlük limitini kontrol et.");
-        setIsSending(false);
-      }
-    }, 1000);
+    const result = await sendGift(giftId, recipientPhone, recipientName, note || undefined);
+    if (result) {
+      setStep("success");
+      toast.success("Jestini yaptın!");
+    } else {
+      toast.error("Hediye gönderilemedi. Günlük limitini kontrol et.");
+      setIsSending(false);
+    }
   };
 
   if (!gift) {

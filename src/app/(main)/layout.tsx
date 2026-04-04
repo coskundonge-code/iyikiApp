@@ -20,11 +20,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const currentUser = useAppStore((s) => s.currentUser);
   const unreadCount = useAppStore((s) => s.unreadCount);
 
+  const initializeData = useAppStore((s) => s.initializeData);
+  const isInitialized = useAppStore((s) => s.isInitialized);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
+    } else if (!isInitialized) {
+      initializeData();
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, isInitialized, initializeData]);
 
   if (!isAuthenticated || !currentUser) return null;
 
@@ -34,7 +39,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <h1 className="text-lg font-bold text-foreground tracking-tight">iyi ki</h1>
+            <h1 className="text-lg font-bold tracking-tight gradient-text">iyi ki</h1>
           </div>
           <Link
             href="/notifications"

@@ -116,3 +116,153 @@ body {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ==========================================
+   UI/UX IMPROVEMENTS
+   ========================================== */
+
+/* Shimmer loading skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--card-hover) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-card {
+  height: 160px;
+  border-radius: 16px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Soft card shadow */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.04);
+}
+
+/* Enhanced gift card */
+.gift-card-enhanced {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border);
+}
+
+.gift-card-enhanced:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -8px rgba(225, 29, 72, 0.15);
+  border-color: var(--primary-light);
+}
+
+/* Floating action button */
+.fab {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(225, 29, 72, 0.3);
+  z-index: 40;
+}
+
+/* Gradient border */
+.gradient-border {
+  position: relative;
+  background: var(--card);
+  border-radius: 16px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  z-index: -1;
+  opacity: 0.15;
+}
+
+/* Time indicator colors */
+.time-urgent {
+  color: var(--danger);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+/* Touch ripple effect */
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0,0,0,0.06) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.touch-ripple:active::after {
+  opacity: 1;
+}
+
+/* Better input focus */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+/* Status dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot-active { background: var(--success); }
+.status-dot-warning { background: var(--warning); }
+.status-dot-danger { background: var(--danger); }

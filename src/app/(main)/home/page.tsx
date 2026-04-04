@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ChevronRight, Heart, ArrowUpRight, ArrowDownLeft, Zap, Trophy, Users as UsersIcon } from "lucide-react";
@@ -14,7 +14,7 @@ function GiftCard({ gift, onClick }: { gift: Gift; onClick: () => void }) {
     <motion.button
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="gift-card flex-shrink-0 w-36 bg-card rounded-2xl border border-border p-4 text-left"
+      className="gift-card-enhanced flex-shrink-0 w-36 bg-card rounded-2xl p-4 text-left card-shadow"
     >
       <div className="text-4xl mb-3">{gift.image}</div>
       <h3 className="font-semibold text-sm text-foreground truncate">{gift.name}</h3>
@@ -77,6 +77,15 @@ export default function HomePage() {
   const selectedCategory = useAppStore((s) => s.selectedCategory);
   const setSelectedCategory = useAppStore((s) => s.setSelectedCategory);
   const getFilteredGifts = useAppStore((s) => s.getFilteredGifts);
+
+  const isInitialized = useAppStore((s) => s.isInitialized);
+  const initializeData = useAppStore((s) => s.initializeData);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initializeData();
+    }
+  }, [isInitialized, initializeData]);
 
   const filteredGifts = getFilteredGifts();
 

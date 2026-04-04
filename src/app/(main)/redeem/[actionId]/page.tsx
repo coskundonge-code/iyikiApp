@@ -7,7 +7,6 @@ import { ArrowLeft, MapPin, Clock, QrCode, Check, Navigation, Copy } from "lucid
 import QRCode from "qrcode";
 import { useAppStore } from "@/lib/store";
 import { cn, formatTimeRemaining, getExpiryPercentage } from "@/lib/utils";
-import { MOCK_PARTNERS } from "@/lib/mock-data";
 import toast from "react-hot-toast";
 
 export default function RedeemPage() {
@@ -17,6 +16,12 @@ export default function RedeemPage() {
 
   const giftActions = useAppStore((s) => s.giftActions);
   const redeemGift = useAppStore((s) => s.redeemGift);
+  const partners = useAppStore((s) => s.partners);
+  const loadAdminData = useAppStore((s) => s.loadAdminData);
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
 
   const action = giftActions.find((a) => a.id === actionId);
 
@@ -60,7 +65,7 @@ export default function RedeemPage() {
     );
   }
 
-  const partner = MOCK_PARTNERS.find((p) => p.id === action.gift.partnerId);
+  const partner = partners.find((p) => p.id === action.gift.partnerId);
   const branches = partner?.branches || [];
   const branch = branches.find((b) => b.id === selectedBranch);
 
@@ -69,19 +74,17 @@ export default function RedeemPage() {
     setShowQR(true);
   };
 
-  const handleRedeem = () => {
+  const handleRedeem = async () => {
     if (!branch) return;
     setIsRedeeming(true);
-    setTimeout(() => {
-      const success = redeemGift(actionId, branch.id, branch.name);
-      if (success) {
-        setRedeemed(true);
-        toast.success("Hediye kullanıldı! Afiyet olsun!");
-      } else {
-        toast.error("Bir hata oluştu");
-      }
-      setIsRedeeming(false);
-    }, 1500);
+    const success = await redeemGift(actionId, branch.id, branch.name);
+    if (success) {
+      setRedeemed(true);
+      toast.success("Hediye kullanıldı! Afiyet olsun!");
+    } else {
+      toast.error("Bir hata oluştu");
+    }
+    setIsRedeeming(false);
   };
 
   const handleCopyCode = () => {

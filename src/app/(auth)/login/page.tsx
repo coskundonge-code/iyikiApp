@@ -154,7 +154,7 @@ export default function LoginPage() {
       {/* Footer */}
       <p className="text-center text-xs text-muted mt-6">
         Devam ederek <span className="underline cursor-pointer">Gizlilik Politikası</span> ve{" "}
-        <span className="underline cursor-pointer">Kullanım Koşulları</span>&apos;nı kabul edersin.
+        <span className="underline cursor-pointer">Kullanım Koşulları</span>&apos;nı kabul edersiniz.
       </p>
     </motion.div>
   );

@@ -1,11 +1,25 @@
 "use client";
 
-import { Heart, Users, MapPin, Gift, TrendingUp } from "lucide-react";
-import { MOCK_SPONSORS } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import { MapPin } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 
 export default function SponsorImpactPage() {
-  const sponsor = MOCK_SPONSORS[0];
+  const { sponsors, isLoading, loadAdminData } = useAppStore();
+
+  useEffect(() => {
+    loadAdminData();
+  }, [loadAdminData]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
+  }
+
+  const sponsor = sponsors[0];
+
+  if (!sponsor) {
+    return <div className="p-8 text-center text-muted text-sm">Sponsor bulunamadı</div>;
+  }
 
   const cityData = [
     { city: "Istanbul", count: 1200, pct: 52 },
