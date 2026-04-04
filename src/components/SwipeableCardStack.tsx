@@ -69,6 +69,16 @@ const PRODUCT_GRADIENTS: Record<string, { bg: string; glow: string }> = {
 };
 const DEFAULT_GRADIENT = { bg: "from-slate-400 via-gray-500 to-zinc-600", glow: "shadow-slate-400/30" };
 
+/* ── Her ürüne farklı renk — index bazlı döngüsel palet ── */
+const PRODUCT_COLOR_PALETTE = [
+  { bg: "from-amber-400 via-orange-500 to-red-500", glow: "shadow-amber-400/30" },
+  { bg: "from-violet-400 via-purple-500 to-fuchsia-600", glow: "shadow-violet-400/30" },
+  { bg: "from-emerald-400 via-teal-500 to-cyan-600", glow: "shadow-emerald-400/30" },
+  { bg: "from-sky-400 via-blue-500 to-indigo-600", glow: "shadow-sky-400/30" },
+  { bg: "from-rose-400 via-pink-500 to-red-600", glow: "shadow-rose-400/30" },
+  { bg: "from-lime-400 via-green-500 to-emerald-600", glow: "shadow-lime-400/30" },
+];
+
 /* ── Brand type ── */
 export interface Brand {
   id: string;
@@ -306,27 +316,26 @@ function BrandContent({ brand }: { brand: Brand }) {
   );
 }
 
-function ProductContent({ gift }: { gift: Gift }) {
-  const colors = PRODUCT_GRADIENTS[gift.category] || DEFAULT_GRADIENT;
+function ProductContent({ gift, colorIndex, onSend }: { gift: Gift; colorIndex: number; onSend?: () => void }) {
+  const colors = PRODUCT_COLOR_PALETTE[colorIndex % PRODUCT_COLOR_PALETTE.length];
   return (
     <CardShell gradient={colors.bg} glow={colors.glow}>
-      <div className="text-[64px] mb-1 drop-shadow-lg">{gift.image}</div>
+      <div className="text-[56px] mb-1 drop-shadow-lg">{gift.image}</div>
       <h2 className="text-[22px] font-black text-center leading-tight drop-shadow-sm">{gift.name}</h2>
-      <p className="text-white/70 text-[13px] font-semibold mt-0.5">{gift.partnerName}</p>
-      <div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
-        {gift.isPremium && (
-          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[11px] font-bold border border-white/20">PRO</span>
-        )}
-        {gift.sponsorName && (
-          <span className="px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-[11px] font-semibold border border-white/15">{gift.sponsorName}</span>
-        )}
-        <span className="px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-[11px] font-semibold border border-white/15">
-          {gift.stock > 10 ? "Stokta" : gift.stock > 0 ? `Son ${gift.stock}` : "Tukendi"}
-        </span>
-      </div>
-      <p className="text-white/40 text-[12px] mt-2 text-center max-w-[240px]">
-        {gift.description || "Gonder butonuna tikla"}
+      <p className="text-white/60 text-[13px] font-semibold mt-0.5">{gift.partnerName}</p>
+      <p className="text-white/40 text-[11px] mt-1 text-center max-w-[220px]">
+        {gift.description || ""}
       </p>
+      {/* Yeşil Gönder butonu — kart içinde */}
+      {onSend && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSend(); }}
+          className="mt-3 px-8 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-[14px] font-bold shadow-lg shadow-emerald-500/30 transition-all flex items-center gap-2"
+        >
+          <Send className="w-4 h-4" />
+          Gönder
+        </button>
+      )}
     </CardShell>
   );
 }
@@ -766,7 +775,7 @@ export default function SwipeableCardStack({
                     rightColor="orange"
                     leftColor="teal"
                   >
-                    <ProductContent gift={brandProducts[productIndex]} />
+                    <ProductContent gift={brandProducts[productIndex]} colorIndex={productIndex} onSend={handleSendGift} />
                   </TinderCard>
                 )}
               </div>
@@ -782,39 +791,10 @@ export default function SwipeableCardStack({
         )}
       </div>
 
-      {/* ── ACTION BUTTONS ── */}
-      <div className="flex items-center justify-center gap-5 mt-3">
-        {level === "products" ? (
-          <>
-            <button
-              onClick={handleProductPrev}
-              className="w-14 h-14 rounded-full bg-white border-2 border-orange-200 flex items-center justify-center shadow-lg shadow-orange-100/50 transition-transform active:scale-90"
-            >
-              <ChevronRight className="w-5 h-5 text-orange-400 rotate-180" />
-            </button>
-
-            <button
-              onClick={handleSendGift}
-              disabled={disabled}
-              className={cn(
-                "w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl transition-transform active:scale-90",
-                disabled
-                  ? "bg-muted/30 cursor-not-allowed"
-                  : "bg-gradient-to-br from-primary to-pink-500 shadow-primary/30 hover:shadow-primary/50"
-              )}
-            >
-              <Send className="w-7 h-7 text-white" />
-            </button>
-
-            <button
-              onClick={handleProductNext}
-              className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
-            >
-              <ChevronRight className="w-5 h-5 text-teal-400" />
-            </button>
-          </>
-        ) : (
-          <>
+      {/* ── ACTION BUTTONS — sadece marka seviyesinde ── */}
+      {level === "brands" && (
+        <>
+          <div className="flex items-center justify-center gap-5 mt-3">
             <button
               onClick={handleBrandSwipeLeft}
               className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
@@ -835,26 +815,14 @@ export default function SwipeableCardStack({
             >
               <GiftIcon className="w-5 h-5 text-teal-400" />
             </button>
-          </>
-        )}
-      </div>
-
-      {/* Button labels */}
-      <div className="flex items-center justify-center gap-8 mt-2.5">
-        {level === "products" ? (
-          <>
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Onceki</span>
-            <span className="text-[11px] text-muted/50 font-bold w-[72px] text-center">Gonder</span>
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Sonraki</span>
-          </>
-        ) : (
-          <>
+          </div>
+          <div className="flex items-center justify-center gap-8 mt-2.5">
             <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Urunler</span>
             <span className="text-[11px] text-muted/50 font-bold w-[72px] text-center">Kesfet</span>
             <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Urunler</span>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
