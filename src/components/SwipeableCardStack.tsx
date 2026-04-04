@@ -331,26 +331,11 @@ function MiniCardContent({ gradient, emoji, label }: { gradient: string; emoji: 
    DOT INDICATORS — pure CSS, no framer-motion layout
    ═══════════════════════════════════════════════════════════════ */
 
-function HorizontalDots({ total, current }: { total: number; current: number }) {
-  if (total <= 1) return null;
+function ProductCounter({ total, current }: { total: number; current: number }) {
   return (
-    <div className="flex items-center justify-center gap-[6px]">
-      {Array.from({ length: total }, (_, idx) => {
-        const isActive = idx === current;
-        return (
-          <div
-            key={idx}
-            style={{
-              width: isActive ? 24 : 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: isActive ? "var(--color-primary, #E8364F)" : "rgba(0,0,0,0.15)",
-              transition: "all 0.6s cubic-bezier(0.25, 1, 0.5, 1)",
-            }}
-          />
-        );
-      })}
-    </div>
+    <span className="text-[13px] font-bold text-muted/50 tabular-nums">
+      {current + 1}/{total}
+    </span>
   );
 }
 
@@ -779,7 +764,7 @@ export default function SwipeableCardStack({
       {/* ── HORIZONTAL DOTS — sadece urun seviyesinde goster ── */}
       <div className="mt-4 flex items-center justify-center" style={{ minHeight: 12 }}>
         {level === "products" && (
-          <HorizontalDots total={brandProducts.length} current={productIndex} />
+          <ProductCounter total={brandProducts.length} current={productIndex} />
         )}
       </div>
 
