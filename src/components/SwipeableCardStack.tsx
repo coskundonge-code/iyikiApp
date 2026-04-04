@@ -726,6 +726,7 @@ export default function SwipeableCardStack({
                     key={`bt-${visibleBrands[0].id}-${brandIndex}`}
                     onSwipeRight={() => handleBrandSwipeRight(brandIndex)}
                     onSwipeLeft={handleBrandSwipeLeft}
+                    noThrow
                     rightLabel="URUNLER"
                     leftLabel="URUNLER"
                     rightIcon={GiftIcon}
@@ -814,21 +815,21 @@ export default function SwipeableCardStack({
         ) : (
           <>
             <button
-              onClick={() => triggerButtonSwipe("left")}
+              onClick={handleBrandSwipeLeft}
               className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
             >
               <GiftIcon className="w-5 h-5 text-teal-400" />
             </button>
 
             <button
-              onClick={() => triggerButtonSwipe("right")}
+              onClick={() => handleBrandSwipeRight(brandIndex)}
               className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-transform active:scale-90"
             >
               <GiftIcon className="w-7 h-7 text-white" />
             </button>
 
             <button
-              onClick={() => triggerButtonSwipe("right")}
+              onClick={() => handleBrandSwipeRight(brandIndex)}
               className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
             >
               <GiftIcon className="w-5 h-5 text-teal-400" />
