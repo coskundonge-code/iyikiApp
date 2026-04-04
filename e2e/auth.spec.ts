@@ -135,4 +135,8 @@ test.describe('OTP Verification', () => {
     const resendText = page.locator('text=/Tekrar|Resend/i')
 
     const isButtonVisible = await resendButton.first().isVisible().catch(() => false)
-    const 
+    const isTextVisible = await resendText.first().isVisible().catch(() => false)
+
+    expect(isButtonVisible || isTextVisible).toBe(true)
+  })
+})

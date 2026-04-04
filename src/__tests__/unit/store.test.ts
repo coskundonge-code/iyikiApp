@@ -573,4 +573,30 @@ describe('App Store (Zustand)', () => {
               name: 'Coffee',
               category: 'coffee',
               stock: 10,
-              isActive: t
+              isActive: true,
+              isPremium: false,
+              expiryHours: 72,
+              partnerName: 'Starbucks',
+              partnerLogo: '',
+              description: '',
+              image: '',
+            },
+          } as any,
+        ],
+      })
+
+      const sent = store.getSentGifts()
+
+      expect(sent).toHaveLength(1)
+      expect(sent[0].senderId).toBe('user-1')
+    })
+
+    it('should return empty array if no current user', () => {
+      const store = useAppStore.getState()
+
+      const sent = store.getSentGifts()
+
+      expect(sent).toEqual([])
+    })
+  })
+})

@@ -71,4 +71,10 @@
       "icons": [
         {
           "src": "/icons/gifts-192.png",
-          "sizes"
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

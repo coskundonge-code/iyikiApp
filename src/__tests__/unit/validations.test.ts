@@ -282,4 +282,17 @@ describe('Validation Schemas', () => {
     })
 
     it('should validate with partial params', () => {
-      const result = paginationSchemaWithDefaults.safeParse
+      const result = paginationSchemaWithDefaults.safeParse({
+        page: 2,
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject invalid limit with defaults', () => {
+      const result = paginationSchemaWithDefaults.safeParse({
+        limit: 200,
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+})

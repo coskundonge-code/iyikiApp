@@ -16,9 +16,15 @@ export default function LoginPage() {
   const currentUser = useAppStore((s) => s.currentUser);
   const [phone, setPhoneInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Giriş yapmış kullanıcıyı uygun sayfaya yönlendir
   useEffect(() => {
+    if (!mounted) return;
     if (isAuthenticated && currentUser) {
       switch (currentUser.role) {
         case "admin": router.replace("/admin"); break;
@@ -27,7 +33,7 @@ export default function LoginPage() {
         default: router.replace("/home");
       }
     }
-  }, [isAuthenticated, currentUser, router]);
+  }, [isAuthenticated, currentUser, router, mounted]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +60,8 @@ export default function LoginPage() {
       default: router.push("/home");
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <motion.div

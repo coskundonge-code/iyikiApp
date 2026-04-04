@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 
@@ -8,8 +8,14 @@ export default function RootPage() {
   const router = useRouter();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const currentUser = useAppStore((s) => s.currentUser);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (isAuthenticated && currentUser) {
       switch (currentUser.role) {
         case "admin":
@@ -27,7 +33,9 @@ export default function RootPage() {
     } else {
       router.replace("/login");
     }
-  }, [isAuthenticated, currentUser, router]);
+  }, [isAuthenticated, currentUser, router, mounted]);
+
+  if (!mounted) return null;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

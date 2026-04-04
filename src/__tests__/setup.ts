@@ -37,4 +37,7 @@ global.IntersectionObserver = class IntersectionObserver {
   disconnect() {}
   observe() {}
   takeRecords() {
-    r
+    return []
+  }
+  unobserve() {}
+} as any

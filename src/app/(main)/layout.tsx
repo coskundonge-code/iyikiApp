@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Home, Gift, User, Bell } from "lucide-react";
@@ -21,16 +21,22 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const unreadCount = useAppStore((s) => s.unreadCount);
   const initializeData = useAppStore((s) => s.initializeData);
   const isInitialized = useAppStore((s) => s.isInitialized);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (!isAuthenticated) {
       router.replace("/login");
     } else if (!isInitialized) {
       initializeData();
     }
-  }, [isAuthenticated, router, isInitialized, initializeData]);
+  }, [isAuthenticated, router, isInitialized, initializeData, mounted]);
 
-  if (!isAuthenticated || !currentUser) return null;
+  if (!mounted || !isAuthenticated || !currentUser) return null;
 
   return (
     <div className="flex flex-col min-h-screen max-w-lg mx-auto w-full bg-background">

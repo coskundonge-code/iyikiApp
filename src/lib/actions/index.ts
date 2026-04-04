@@ -54,6 +54,17 @@ export async function getUserById(userId: string): Promise<ServerActionResponse<
 export async function getUsers(): Promise<ServerActionResponse<User[]>> {
   try {
     const supabase = await createServerSupabaseClient();
+    
+    // Auth Check
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user?.id) {
+      return { data: null, error: 'Unauthorized' };
+    }
+    const { data: currentUser } = await supabase.from('users').select('role').eq('id', authData.user.id).single();
+    if (currentUser?.role !== 'admin') {
+      return { data: null, error: 'Forbidden' };
+    }
+
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -181,6 +192,17 @@ export async function getGiftActions(userId: string, phone: string): Promise<Ser
 export async function getAllGiftActions(): Promise<ServerActionResponse<GiftAction[]>> {
   try {
     const supabase = await createServerSupabaseClient();
+    
+    // Auth Check
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user?.id) {
+      return { data: null, error: 'Unauthorized' };
+    }
+    const { data: currentUser } = await supabase.from('users').select('role').eq('id', authData.user.id).single();
+    if (currentUser?.role !== 'admin') {
+      return { data: null, error: 'Forbidden' };
+    }
+
     const { data, error } = await supabase
       .from('gift_actions')
       .select(`
@@ -489,6 +511,17 @@ export async function markAllNotificationsRead(userId: string): Promise<ServerAc
 export async function getFraudFlags(): Promise<ServerActionResponse<FraudFlag[]>> {
   try {
     const supabase = await createServerSupabaseClient();
+    
+    // Auth Check
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user?.id) {
+      return { data: null, error: 'Unauthorized' };
+    }
+    const { data: currentUser } = await supabase.from('users').select('role').eq('id', authData.user.id).single();
+    if (currentUser?.role !== 'admin') {
+      return { data: null, error: 'Forbidden' };
+    }
+
     const { data, error } = await supabase
       .from('fraud_flags')
       .select('*')
@@ -511,6 +544,16 @@ export async function getFraudFlags(): Promise<ServerActionResponse<FraudFlag[]>
 export async function getAdminStats(): Promise<ServerActionResponse<DailyStats>> {
   try {
     const supabase = await createServerSupabaseClient();
+
+    // Auth Check
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user?.id) {
+      return { data: null, error: 'Unauthorized' };
+    }
+    const { data: currentUser } = await supabase.from('users').select('role').eq('id', authData.user.id).single();
+    if (currentUser?.role !== 'admin') {
+      return { data: null, error: 'Forbidden' };
+    }
 
     // Get today's date
     const today = new Date().toISOString().split('T')[0];
