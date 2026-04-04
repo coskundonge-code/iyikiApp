@@ -30,8 +30,8 @@ export default function LoginPage() {
     }, 500);
   };
 
-  const handleQuickLogin = (role: string) => {
-    loginAsRole(role);
+  const handleQuickLogin = async (role: string) => {
+    await loginAsRole(role);
     toast.success("Hoş geldiniz!");
     switch (role) {
       case "admin": router.push("/admin"); break;
