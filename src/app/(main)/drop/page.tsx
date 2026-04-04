@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 // Inline mock data for the drop (to avoid import issues)
 const DROP_DATA = {
   title: "İYİ Kİ Perşembesi",
-  description: "Bu haftanın sınırlı sayıda jestleri! İlk gelen kapar.",
+  description: "Bu haftanın sınırlı sayıda jestleri! Acele et, kaçırma.",
   totalStock: 50,
   claimedCount: 23,
 };
@@ -47,7 +47,7 @@ export default function DropPage() {
   }, []);
 
   const handleClaim = (giftId: string) => {
-    toast.success("Drop hediyesi yakalandı! Gönder sayfasından birine ısmarla.");
+    toast.success("Hediye seçildi! Şimdi birine ısmarla.");
     setClaimed((c) => c + 1);
     router.push(`/send/${giftId}`);
   };
@@ -141,7 +141,7 @@ export default function DropPage() {
                 onClick={() => handleClaim(gift.id)}
                 className="px-4 py-2 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-sm font-bold rounded-xl hover:from-orange-600 hover:to-rose-600 transition-all shadow-sm whitespace-nowrap"
               >
-                Kapma!
+                Hemen Al
               </button>
             </motion.div>
           ))}
@@ -155,7 +155,7 @@ export default function DropPage() {
           {[
             { emoji: "📅", text: "Her Perşembe sabah 10:00'da yeni Drop açılır" },
             { emoji: "⏰", text: "Sınırlı sayıda hediye, gece 22:00'ye kadar geçerli" },
-            { emoji: "🏃", text: "İlk gelen kapar! Hızlı ol, kaçırma" },
+            { emoji: "🏃", text: "Sınırlı sayıda! Acele et, kaçırma" },
             { emoji: "🎁", text: "Yakaladığın hediyeyi istediğin birine ısmarla" },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">

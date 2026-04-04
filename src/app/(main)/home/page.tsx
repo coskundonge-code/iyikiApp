@@ -164,7 +164,7 @@ export default function HomePage() {
                 <span className="text-[11px] font-bold uppercase tracking-widest opacity-90">Haftalik Drop</span>
               </div>
               <h3 className="font-extrabold text-lg">iyi ki Persembesi</h3>
-              <p className="text-white/80 text-sm mt-1">Sinirli sayida jest, ilk gelen kapar!</p>
+              <p className="text-white/80 text-sm mt-1">Sinirli sayida jest, acele et!</p>
             </div>
             <div className="bg-white/20 rounded-2xl px-4 py-3 backdrop-blur-sm text-center min-w-[64px]">
               <p className="text-lg font-extrabold">27</p>
