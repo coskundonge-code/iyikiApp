@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Gift, Phone, ArrowRight, Users, Shield, Building2, Heart } from "lucide-react";
@@ -12,8 +12,22 @@ export default function LoginPage() {
   const router = useRouter();
   const setPhone = useAppStore((s) => s.setPhone);
   const loginAsRole = useAppStore((s) => s.loginAsRole);
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const currentUser = useAppStore((s) => s.currentUser);
   const [phone, setPhoneInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Giriş yapmış kullanıcıyı uygun sayfaya yönlendir
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      switch (currentUser.role) {
+        case "admin": router.replace("/admin"); break;
+        case "partner": router.replace("/partner"); break;
+        case "sponsor": router.replace("/sponsor"); break;
+        default: router.replace("/home");
+      }
+    }
+  }, [isAuthenticated, currentUser, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

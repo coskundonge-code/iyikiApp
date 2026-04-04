@@ -1,22 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Teşekkürler | İyi Ki",
   description: "Gerçek hediyeler, gerçek jestler. Para yok, jest var.",
   keywords: ["hediye", "jest", "teşekkürler", "iyi ki", "kahve ısmarla"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "iyi ki",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    url: "https://iyiki.app",
+    title: "iyi ki - Gerçek Hediyeler",
+    description: "Gerçek hediyeler, gerçek jestler. Para yok, jest var.",
+    siteName: "iyi ki",
+  },
 };
 
 export const viewport: Viewport = {
@@ -24,6 +29,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: "#e11d48",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -34,8 +40,16 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="iyi ki" />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
         <Toaster
@@ -49,7 +63,70 @@ export default function RootLayout({
             },
           }}
         />
+        <PWAInstallPrompt />
+        <ServiceWorkerRegistration />
       </body>
     </html>
+  );
+}
+
+// Component to handle service worker registration
+function ServiceWorkerRegistration() {
+  if (typeof window === 'undefined') return null;
+
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/sw.js').then(
+                (registration) => {
+                  console.log('Service Worker registered:', registration);
+
+                  // Check for updates periodically
+                  setInterval(() => {
+                    registration.update();
+                  }, 60000);
+                },
+                (error) => {
+                  console.error('Service Worker registration failed:', error);
+                }
+              );
+            });
+          }
+        `,
+      }}
+    />
+  );
+}
+
+// Component to handle PWA install prompt
+function PWAInstallPrompt() {
+  if (typeof window === 'undefined') return null;
+
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          let deferredPrompt;
+
+          window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Show install button/prompt if you have one
+            console.log('Install prompt ready');
+          });
+
+          window.addEventListener('appinstalled', () => {
+            console.log('App installed');
+            deferredPrompt = null;
+          });
+
+          // Make deferredPrompt available globally if needed
+          window.pwaInstallPrompt = deferredPrompt;
+        `,
+      }}
+    />
   );
 }

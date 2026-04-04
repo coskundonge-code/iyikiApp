@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronRight, Heart, ArrowUpRight, ArrowDownLeft, Zap, Trophy, Users as UsersIcon } from "lucide-react";
+import { Sparkles, ChevronRight, Heart, ArrowUpRight, ArrowDownLeft, Zap, Trophy, Users as UsersIcon, Gift as GiftIcon, Send, Star, Coffee } from "lucide-react";
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
 import { cn, formatRelativeTime, getStatusLabel, getStatusColor } from "@/lib/utils";
@@ -119,13 +119,13 @@ export default function HomePage() {
 
   return (
     <div className="px-5 pt-6 pb-8 space-y-10">
-      {/* Greeting */}
+      {/* Welcome & App Explanation */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         className="premium-card p-7"
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-[13px] text-muted font-medium uppercase tracking-widest mb-1">Hoş geldin</p>
             <h2 className="text-[28px] font-extrabold text-foreground tracking-tight leading-tight">
@@ -138,12 +138,68 @@ export default function HomePage() {
           </div>
         </div>
         {currentUser?.tier === "premium" && (
-          <div className="mt-3">
+          <div className="mb-4">
             <span className="text-[11px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full font-bold tracking-wide">
               PREMIUM ÜYE
             </span>
           </div>
         )}
+        <p className="text-[14px] text-muted leading-relaxed font-medium">
+          Arkadaşına bir kahve ısmarla, sevdiklerine çiçek gönder, birine güzel bir kitap hediye et — sadece tek bir dokunuşla sevdiklerini sevindir. Hediye listesinden birini seç, kime göndermek istediğini belirt, gerisi iyiki de ;)
+        </p>
+      </motion.div>
+
+      {/* Quick Functions */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="grid grid-cols-2 gap-3"
+      >
+        <Link href="/send">
+          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+            className="premium-card p-5 cursor-pointer h-full"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-50 flex items-center justify-center mb-3">
+              <Send className="w-5 h-5 text-rose-600" />
+            </div>
+            <h4 className="text-[14px] font-bold text-foreground">Hediye Gönder</h4>
+            <p className="text-[12px] text-muted mt-1 font-medium">Bir jest yap, gülümset</p>
+          </motion.div>
+        </Link>
+        <Link href="/drop">
+          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+            className="premium-card p-5 cursor-pointer h-full"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-50 flex items-center justify-center mb-3">
+              <Zap className="w-5 h-5 text-violet-600" />
+            </div>
+            <h4 className="text-[14px] font-bold text-foreground">Haftalık Drop</h4>
+            <p className="text-[12px] text-muted mt-1 font-medium">Sınırlı sayıda fırsatlar</p>
+          </motion.div>
+        </Link>
+        <Link href="/community">
+          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+            className="premium-card p-5 cursor-pointer h-full"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center mb-3">
+              <UsersIcon className="w-5 h-5 text-indigo-600" />
+            </div>
+            <h4 className="text-[14px] font-bold text-foreground">Topluluklar</h4>
+            <p className="text-[12px] text-muted mt-1 font-medium">Askıda jest, birlikte güzel</p>
+          </motion.div>
+        </Link>
+        <Link href="/achievements">
+          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+            className="premium-card p-5 cursor-pointer h-full"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-50 flex items-center justify-center mb-3">
+              <Trophy className="w-5 h-5 text-amber-600" />
+            </div>
+            <h4 className="text-[14px] font-bold text-foreground">Başarımlar</h4>
+            <p className="text-[12px] text-muted mt-1 font-medium">{sentActions.length >= 1 ? "1" : "0"}/12 rozet</p>
+          </motion.div>
+        </Link>
       </motion.div>
 
       {/* Weekly Drop */}
@@ -255,33 +311,6 @@ export default function HomePage() {
         </motion.div>
       )}
 
-      {/* Quick Access */}
-      <div className="grid grid-cols-2 gap-4">
-        <Link href="/achievements">
-          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
-            className="premium-card p-5 cursor-pointer h-full"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-50 flex items-center justify-center mb-3">
-              <Trophy className="w-5 h-5 text-amber-600" />
-            </div>
-            <h4 className="text-[14px] font-bold text-foreground">Başarımlar</h4>
-            <p className="text-[12px] text-muted mt-1 font-medium">
-              {sentActions.length >= 1 ? "1" : "0"}/12 rozet
-            </p>
-          </motion.div>
-        </Link>
-        <Link href="/community">
-          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
-            className="premium-card p-5 cursor-pointer h-full"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center mb-3">
-              <UsersIcon className="w-5 h-5 text-indigo-600" />
-            </div>
-            <h4 className="text-[14px] font-bold text-foreground">Topluluklar</h4>
-            <p className="text-[12px] text-muted mt-1 font-medium">4 aktif topluluk</p>
-          </motion.div>
-        </Link>
-      </div>
 
       {/* Recent */}
       {myActions.length > 0 && (

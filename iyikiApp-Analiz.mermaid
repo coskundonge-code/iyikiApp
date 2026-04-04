@@ -1,0 +1,252 @@
+%% ============================================================
+%% iyikiApp - TÜM MERMAID DİYAGRAMLARI
+%% Tarih: 4 Nisan 2026
+%% ============================================================
+
+
+%% ============================================================
+%% 1. SİSTEM MİMARİSİ
+%% ============================================================
+
+graph TB
+    subgraph CLIENT["Client Layer - Next.js 16 App Router"]
+        direction LR
+        subgraph ROLES["Rol Bazlı Paneller"]
+            USER_PANEL["User Panel: home, send, profile, notifications, redeem, drop, achievements, community, premium"]
+            ADMIN_PANEL["Admin Panel: dashboard, users, gifts, partners, sponsors, fraud"]
+            PARTNER_PANEL["Partner Panel: dashboard, products, branches, campaigns, reports"]
+            SPONSOR_PANEL["Sponsor Panel: dashboard, campaigns, impact"]
+        end
+        AUTH_PAGES["Auth: login + verify"]
+        ROOT_ROUTER["Root Router: Rol bazlı yönlendirme"]
+    end
+
+    subgraph STATE["State Layer"]
+        ZUSTAND["Zustand Store + persist middleware + mock data fallback"]
+        TYPES["TypeScript Types: User, Gift, GiftAction, Partner, Sponsor"]
+    end
+
+    subgraph DATA["Data Layer"]
+        QUERIES["Supabase Queries: CRUD operations"]
+        MAPPERS["Data Mappers: snake_case to camelCase"]
+        SB_CLIENT["Supabase Client: SSR + Browser"]
+    end
+
+    subgraph SUPABASE["Supabase Backend"]
+        SB_AUTH["Auth Service: Phone OTP"]
+        SB_DB["PostgreSQL: 12 tablo"]
+        SB_RLS["Row Level Security"]
+        SB_RPC["RPC Functions"]
+        SB_TRIGGER["Triggers: handle_new_user"]
+    end
+
+    AUTH_PAGES --> ROOT_ROUTER
+    ROOT_ROUTER --> ROLES
+    ROLES --> ZUSTAND
+    ZUSTAND --> QUERIES
+    QUERIES --> MAPPERS
+    MAPPERS --> SB_CLIENT
+    SB_CLIENT --> SUPABASE
+
+
+%% ============================================================
+%% 2. VERİTABANI ER DİYAGRAMI
+%% ============================================================
+
+erDiagram
+    users ||--o{ gift_actions : "sender"
+    users ||--o{ gift_actions : "receiver"
+    users ||--o{ devices : "has"
+    users ||--o{ notifications : "receives"
+    users ||--o{ fraud_flags : "flagged"
+    users ||--o{ scheduled_gifts : "schedules"
+    partners ||--o{ gifts : "provides"
+    partners ||--o{ branches : "has"
+    sponsors ||--o{ gifts : "sponsors"
+    gifts ||--o{ gift_actions : "used_in"
+    branches ||--o{ gift_actions : "redeemed_at"
+
+    users {
+        uuid id PK
+        text phone UK
+        text name
+        user_role role
+        premium_tier tier
+        int iyki_score
+        int daily_send_count
+        int daily_send_limit
+        user_status status
+    }
+
+    partners {
+        uuid id PK
+        text name
+        text api_key UK
+        text webhook_url
+        boolean is_active
+    }
+
+    branches {
+        uuid id PK
+        uuid partner_id FK
+        text name
+        float lat
+        float lng
+    }
+
+    gifts {
+        uuid id PK
+        uuid partner_id FK
+        uuid sponsor_id FK
+        text name
+        gift_category category
+        int stock
+        int expiry_hours
+        boolean is_premium
+    }
+
+    gift_actions {
+        uuid id PK
+        uuid gift_id FK
+        uuid sender_id FK
+        uuid receiver_id FK
+        text receiver_phone
+        gift_action_status status
+        text redeem_code UK
+        timestamptz expires_at
+    }
+
+    sponsors {
+        uuid id PK
+        text name
+        float budget
+        float spent
+    }
+
+    devices {
+        uuid id PK
+        uuid user_id FK
+        text fingerprint UK
+        float trust_score
+        boolean is_blacklisted
+    }
+
+    fraud_flags {
+        uuid id PK
+        uuid user_id FK
+        fraud_type type
+        fraud_severity severity
+        boolean resolved
+    }
+
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        notification_type type
+        text title
+        boolean is_read
+    }
+
+    scheduled_gifts {
+        uuid id PK
+        uuid user_id FK
+        text gift_id
+        timestamptz scheduled_for
+        boolean is_processed
+    }
+
+    audit_logs {
+        uuid id PK
+        text action
+        jsonb metadata
+    }
+
+    analytics_events {
+        uuid id PK
+        text event_name
+        jsonb properties
+    }
+
+
+%% ============================================================
+%% 3. SAYFA ROUTE YAPISI
+%% ============================================================
+
+graph LR
+    ROOT["/"] --> AUTH_CHECK{"Authenticated?"}
+    AUTH_CHECK -->|Hayır| LOGIN["/login"]
+    LOGIN --> VERIFY["/verify"]
+    AUTH_CHECK -->|Evet| ROLE_CHECK{"User Role?"}
+
+    ROLE_CHECK -->|user| HOME["/home"]
+    ROLE_CHECK -->|admin| ADMIN["/admin"]
+    ROLE_CHECK -->|partner| PARTNER_D["/partner"]
+    ROLE_CHECK -->|sponsor| SPONSOR_D["/sponsor"]
+
+    HOME --> SEND["/send"]
+    HOME --> PROFILE["/profile"]
+    HOME --> NOTIF["/notifications"]
+    SEND --> SEND_DETAIL["/send/:giftId"]
+
+    ADMIN --> A_USERS["/admin/users"]
+    ADMIN --> A_GIFTS["/admin/gifts"]
+    ADMIN --> A_PARTNERS["/admin/partners"]
+    ADMIN --> A_SPONSORS["/admin/sponsors"]
+    ADMIN --> A_FRAUD["/admin/fraud"]
+
+
+%% ============================================================
+%% 4. HEDİYE YAŞAM DÖNGÜSÜ
+%% ============================================================
+
+stateDiagram-v2
+    [*] --> PENDING: Hediye gönderildi
+    PENDING --> CLAIMED: Alıcı QR ile kullandı
+    PENDING --> EXPIRED: Süre doldu (72 saat)
+    EXPIRED --> SOCIAL_POOL: Askıda havuzuna aktarıldı
+    SOCIAL_POOL --> DISTRIBUTED: Havuzdan birine dağıtıldı
+    PENDING --> CANCELLED: Gönderici iptal etti
+    CLAIMED --> [*]
+    DISTRIBUTED --> [*]
+    CANCELLED --> [*]
+
+
+%% ============================================================
+%% 5. GELİŞİM PLANI GANTT
+%% ============================================================
+
+gantt
+    title iyikiApp Gelişim Planı 2026
+    dateFormat  YYYY-MM-DD
+
+    section Faz 1 - Güvenlik
+    API Routes / Server Actions           :crit, f1a, 2026-04-07, 10d
+    Gerçek Supabase Auth (OTP)            :crit, f1b, 2026-04-07, 7d
+    Input validation (Zod)                :f1c, after f1a, 5d
+    RPC fonksiyonları (SQL)               :f1d, 2026-04-07, 3d
+
+    section Faz 2 - Core
+    Gift expire cron job                  :crit, f2a, after f1a, 5d
+    Askıda havuzu dağıtım logic           :f2b, after f2a, 5d
+    Push notification                     :f2c, after f1b, 7d
+    SMS bildirim                          :f2d, after f2c, 5d
+    Partner webhook                       :f2e, after f2a, 7d
+
+    section Faz 3 - Test
+    Unit test (Vitest)                    :f3a, after f1c, 5d
+    Integration tests                     :f3b, after f3a, 7d
+    E2E tests (Playwright)                :f3c, after f3b, 7d
+    CI/CD pipeline                        :f3d, after f3a, 5d
+
+    section Faz 4 - UX
+    Haftalık Drop                         :f4a, after f2b, 7d
+    Başarım sistemi                       :f4b, after f4a, 5d
+    Topluluk havuzu                       :f4c, after f4b, 7d
+    1+1 İkram                             :f4d, after f4c, 5d
+    PWA desteği                           :f4e, after f4a, 5d
+
+    section Faz 5 - Büyüme
+    Analytics dashboard                   :f5a, after f4b, 7d
+    Partner self-service                  :f5b, after f2e, 10d
+    Sponsor kampanya builder              :f5c, after f5b, 7d
+    Performance optimization              :f5d, after f5a, 5d

@@ -312,3 +312,368 @@ CREATE POLICY "Users can manage own scheduled gifts" ON public.scheduled_gifts F
 -- Audit/Analytics: service role only
 CREATE POLICY "Service role manages audit logs" ON public.audit_logs USING (auth.jwt()->>'role' = 'service_role');
 CREATE POLICY "Service role manages analytics" ON public.analytics_events USING (auth.jwt()->>'role' = 'service_role');
+
+-- RPC Functions for atomic operations
+
+-- Decrement gift stock (only if stock > 0)
+CREATE OR REPLACE FUNCTION public.decrement_gift_stock(p_gift_id UUID)
+RETURNS TABLE(success BOOLEAN, new_stock INT) AS $$
+BEGIN
+  UPDATE public.gifts
+  SET stock = stock - 1
+  WHERE id = p_gift_id AND stock > 0
+  RETURNING (stock > 0) as success_flag, stock as new_stock_value;
+
+  RETURN QUERY
+  SELECT
+    CASE WHEN stock > 0 THEN true ELSE false END as success,
+    stock as new_stock
+  FROM public.gifts
+  WHERE id = p_gift_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Increment user score by 1
+CREATE OR REPLACE FUNCTION public.increment_user_score(p_user_id UUID)
+RETURNS TABLE(success BOOLEAN, new_score INT) AS $$
+BEGIN
+  UPDATE public.users
+  SET iyki_score = iyki_score + 1
+  WHERE id = p_user_id;
+
+  RETURN QUERY
+  SELECT
+    true as success,
+    iyki_score as new_score
+  FROM public.users
+  WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Reset daily counts for all users
+CREATE OR REPLACE FUNCTION public.reset_daily_counts()
+RETURNS TABLE(users_updated INT) AS $$
+DECLARE
+  v_count INT;
+BEGIN
+  UPDATE public.users
+  SET daily_send_count = 0, daily_receive_count = 0
+  WHERE status = 'active';
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN QUERY
+  SELECT v_count as users_updated;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Expire pending gifts where expires_at < now()
+CREATE OR REPLACE FUNCTION public.expire_pending_gifts()
+RETURNS TABLE(gifts_expired INT) AS $$
+DECLARE
+  v_count INT;
+BEGIN
+  UPDATE public.gift_actions
+  SET status = 'expired', expired_at = now()
+  WHERE status = 'pending' AND expires_at < now();
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN QUERY
+  SELECT v_count as gifts_expired;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Move expired gifts to social pool
+CREATE OR REPLACE FUNCTION public.move_expired_to_pool()
+RETURNS TABLE(gifts_pooled INT) AS $$
+DECLARE
+  v_count INT;
+BEGIN
+  UPDATE public.gift_actions
+  SET status = 'social_pool', pooled_at = now()
+  WHERE status = 'expired' AND pooled_at IS NULL;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN QUERY
+  SELECT v_count as gifts_pooled;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Distribute one random gift from pool to receiver
+CREATE OR REPLACE FUNCTION public.distribute_from_pool(p_receiver_id UUID, p_receiver_phone TEXT)
+RETURNS TABLE(
+  success BOOLEAN,
+  gift_action_id UUID,
+  gift_id UUID,
+  sender_id UUID,
+  note TEXT
+) AS $$
+DECLARE
+  v_action_id UUID;
+  v_gift_id UUID;
+  v_sender_id UUID;
+  v_note TEXT;
+BEGIN
+  -- Select one random gift from social pool
+  SELECT id, gift_id, sender_id, note INTO v_action_id, v_gift_id, v_sender_id, v_note
+  FROM public.gift_actions
+  WHERE status = 'social_pool' AND pooled_at IS NOT NULL
+  ORDER BY RANDOM()
+  LIMIT 1
+  FOR UPDATE;
+
+  IF v_action_id IS NULL THEN
+    RETURN QUERY SELECT false, NULL::UUID, NULL::UUID, NULL::UUID, NULL::TEXT;
+    RETURN;
+  END IF;
+
+  -- Update the gift action with receiver and distributed status
+  UPDATE public.gift_actions
+  SET
+    status = 'distributed',
+    receiver_id = p_receiver_id,
+    receiver_phone = p_receiver_phone,
+    distributed_at = now()
+  WHERE id = v_action_id;
+
+  RETURN QUERY
+  SELECT true, v_action_id, v_gift_id, v_sender_id, v_note;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ==========================================
+-- WEEKLY DROPS - CLAIM MODEL
+-- ==========================================
+CREATE TABLE public.weekly_drops (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  total_stock INT DEFAULT 0,
+  claimed_count INT DEFAULT 0,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE public.drop_gifts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  drop_id UUID REFERENCES public.weekly_drops(id) ON DELETE CASCADE,
+  gift_id UUID REFERENCES public.gifts(id) ON DELETE CASCADE,
+  stock INT DEFAULT 0,
+  claimed_count INT DEFAULT 0
+);
+
+CREATE INDEX idx_drop_gifts_drop ON public.drop_gifts(drop_id);
+CREATE INDEX idx_drop_gifts_gift ON public.drop_gifts(gift_id);
+
+-- ==========================================
+-- COMMUNITY POOLS
+-- ==========================================
+CREATE TABLE public.community_pools (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  emoji TEXT,
+  description TEXT,
+  type TEXT NOT NULL,
+  member_count INT DEFAULT 0,
+  gifts_shared INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  requirement TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE public.community_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pool_id UUID REFERENCES public.community_pools(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  joined_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(pool_id, user_id)
+);
+
+CREATE INDEX idx_community_members_pool ON public.community_members(pool_id);
+CREATE INDEX idx_community_members_user ON public.community_members(user_id);
+
+-- ==========================================
+-- USER ACHIEVEMENTS / BADGES
+-- ==========================================
+CREATE TABLE public.user_achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  achievement_id TEXT NOT NULL,
+  unlocked_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, achievement_id)
+);
+
+CREATE INDEX idx_user_achievements_user ON public.user_achievements(user_id);
+CREATE INDEX idx_user_achievements_achievement ON public.user_achievements(achievement_id);
+
+-- ==========================================
+-- PLUS ONE OFFERS (1+1 İKRAM)
+-- ==========================================
+CREATE TABLE public.plus_one_offers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gift_id UUID REFERENCES public.gifts(id) ON DELETE CASCADE,
+  sponsor_id UUID REFERENCES public.sponsors(id) ON DELETE SET NULL,
+  message TEXT,
+  is_active BOOLEAN DEFAULT true,
+  starts_at TIMESTAMPTZ,
+  ends_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_plus_one_offers_gift ON public.plus_one_offers(gift_id);
+CREATE INDEX idx_plus_one_offers_sponsor ON public.plus_one_offers(sponsor_id);
+CREATE INDEX idx_plus_one_offers_active ON public.plus_one_offers(is_active);
+
+-- ==========================================
+-- ENABLE RLS ON NEW TABLES
+-- ==========================================
+ALTER TABLE public.weekly_drops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.drop_gifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_pools ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.plus_one_offers ENABLE ROW LEVEL SECURITY;
+
+-- ==========================================
+-- RLS POLICIES FOR NEW TABLES
+-- ==========================================
+
+-- Weekly Drops: Anyone can read active drops
+CREATE POLICY "Anyone can read active drops" ON public.weekly_drops FOR SELECT USING (is_active = true);
+CREATE POLICY "Service role can manage drops" ON public.weekly_drops USING (auth.jwt()->>'role' = 'service_role');
+
+-- Drop Gifts: Anyone can read
+CREATE POLICY "Anyone can read drop gifts" ON public.drop_gifts FOR SELECT USING (true);
+CREATE POLICY "Service role can manage drop gifts" ON public.drop_gifts USING (auth.jwt()->>'role' = 'service_role');
+
+-- Community Pools: Anyone can read active pools
+CREATE POLICY "Anyone can read active pools" ON public.community_pools FOR SELECT USING (is_active = true);
+CREATE POLICY "Service role can manage pools" ON public.community_pools USING (auth.jwt()->>'role' = 'service_role');
+
+-- Community Members: Users can manage own memberships, anyone can read
+CREATE POLICY "Users can manage own memberships" ON public.community_members FOR ALL USING (user_id = auth.uid());
+CREATE POLICY "Anyone can read memberships" ON public.community_members FOR SELECT USING (true);
+CREATE POLICY "Service role can manage memberships" ON public.community_members USING (auth.jwt()->>'role' = 'service_role');
+
+-- User Achievements: Users can read own, service can manage
+CREATE POLICY "Users can read own achievements" ON public.user_achievements FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Service can manage achievements" ON public.user_achievements USING (auth.jwt()->>'role' = 'service_role');
+
+-- Plus One Offers: Anyone can read active offers
+CREATE POLICY "Anyone can read active offers" ON public.plus_one_offers FOR SELECT USING (is_active = true);
+CREATE POLICY "Service role can manage offers" ON public.plus_one_offers USING (auth.jwt()->>'role' = 'service_role');
+
+-- ==========================================
+-- RPC FUNCTIONS FOR NEW FEATURES
+-- ==========================================
+
+-- Claim a drop gift
+CREATE OR REPLACE FUNCTION public.claim_drop_gift(p_user_id UUID, p_drop_gift_id UUID)
+RETURNS TABLE(success BOOLEAN, message TEXT) AS $$
+DECLARE
+  v_drop_id UUID;
+  v_stock INT;
+  v_gift_id UUID;
+BEGIN
+  -- Get drop_gift details
+  SELECT drop_id, stock, gift_id INTO v_drop_id, v_stock, v_gift_id
+  FROM public.drop_gifts
+  WHERE id = p_drop_gift_id AND stock > 0
+  FOR UPDATE;
+
+  IF v_drop_gift_id IS NULL THEN
+    RETURN QUERY SELECT false, 'Gift not found or out of stock'::TEXT;
+    RETURN;
+  END IF;
+
+  -- Decrement drop_gifts stock
+  UPDATE public.drop_gifts
+  SET claimed_count = claimed_count + 1, stock = stock - 1
+  WHERE id = p_drop_gift_id;
+
+  -- Increment weekly_drops claimed count
+  UPDATE public.weekly_drops
+  SET claimed_count = claimed_count + 1
+  WHERE id = v_drop_id;
+
+  -- Decrement actual gift stock
+  UPDATE public.gifts
+  SET stock = stock - 1
+  WHERE id = v_gift_id AND stock > 0;
+
+  -- Award achievement if first drop claimed
+  INSERT INTO public.user_achievements (user_id, achievement_id)
+  VALUES (p_user_id, 'drop-hunter')
+  ON CONFLICT DO NOTHING;
+
+  RETURN QUERY SELECT true, 'Gift claimed successfully'::TEXT;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Join a community pool
+CREATE OR REPLACE FUNCTION public.join_community(p_user_id UUID, p_pool_id UUID)
+RETURNS TABLE(success BOOLEAN, message TEXT) AS $$
+BEGIN
+  INSERT INTO public.community_members (pool_id, user_id)
+  VALUES (p_pool_id, p_user_id)
+  ON CONFLICT DO NOTHING;
+
+  UPDATE public.community_pools
+  SET member_count = member_count + 1
+  WHERE id = p_pool_id AND NOT EXISTS (
+    SELECT 1 FROM public.community_members
+    WHERE pool_id = p_pool_id AND user_id = p_user_id
+  );
+
+  -- Award community badge if first pool joined
+  INSERT INTO public.user_achievements (user_id, achievement_id)
+  VALUES (p_user_id, 'community-join')
+  ON CONFLICT DO NOTHING;
+
+  RETURN QUERY SELECT true, 'Successfully joined community'::TEXT;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Leave a community pool
+CREATE OR REPLACE FUNCTION public.leave_community(p_user_id UUID, p_pool_id UUID)
+RETURNS TABLE(success BOOLEAN) AS $$
+BEGIN
+  DELETE FROM public.community_members
+  WHERE user_id = p_user_id AND pool_id = p_pool_id;
+
+  UPDATE public.community_pools
+  SET member_count = GREATEST(0, member_count - 1)
+  WHERE id = p_pool_id;
+
+  RETURN QUERY SELECT true;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Unlock an achievement
+CREATE OR REPLACE FUNCTION public.unlock_achievement(p_user_id UUID, p_achievement_id TEXT)
+RETURNS TABLE(success BOOLEAN, already_unlocked BOOLEAN) AS $$
+DECLARE
+  v_already_exists BOOLEAN;
+BEGIN
+  -- Check if already unlocked
+  SELECT EXISTS(
+    SELECT 1 FROM public.user_achievements
+    WHERE user_id = p_user_id AND achievement_id = p_achievement_id
+  ) INTO v_already_exists;
+
+  IF v_already_exists THEN
+    RETURN QUERY SELECT true, true;
+    RETURN;
+  END IF;
+
+  INSERT INTO public.user_achievements (user_id, achievement_id)
+  VALUES (p_user_id, p_achievement_id)
+  ON CONFLICT DO NOTHING;
+
+  RETURN QUERY SELECT true, false;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

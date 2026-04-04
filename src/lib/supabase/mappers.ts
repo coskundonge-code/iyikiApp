@@ -1,4 +1,4 @@
-import type { User, Gift, GiftAction, Partner, Branch, Sponsor, Notification, FraudFlag } from '@/types';
+import type { User, Gift, GiftAction, Partner, Branch, Sponsor, Notification, FraudFlag, WeeklyDrop, CommunityPool, Achievement, PlusOneOffer } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -140,5 +140,58 @@ export function mapFraudFlag(row: any): FraudFlag {
     description: row.description,
     createdAt: row.created_at,
     resolved: row.resolved ?? false,
+  };
+}
+
+export function mapWeeklyDrop(row: any): WeeklyDrop {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description || '',
+    gifts: (row.drop_gifts || []).map((dg: any) => dg.gifts ? mapGift(dg.gifts) : null).filter(Boolean),
+    totalStock: row.total_stock || 0,
+    claimedCount: row.claimed_count || 0,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    isActive: row.is_active ?? true,
+  };
+}
+
+export function mapCommunityPool(row: any): CommunityPool {
+  return {
+    id: row.id,
+    name: row.name,
+    emoji: row.emoji || '🤝',
+    description: row.description || '',
+    type: row.type || 'neighborhood',
+    memberCount: row.member_count || 0,
+    giftsShared: row.gifts_shared || 0,
+    isActive: row.is_active ?? true,
+    requirement: row.requirement || undefined,
+  };
+}
+
+export function mapAchievement(row: any): Achievement {
+  return {
+    id: row.achievement_id,
+    name: row.name || '',
+    description: row.description || '',
+    emoji: row.emoji || '🏆',
+    requirement: row.requirement || 1,
+    type: row.type || 'social',
+    unlockedAt: row.unlocked_at || undefined,
+  };
+}
+
+export function mapPlusOneOffer(row: any): PlusOneOffer {
+  const gift = row.gifts ? mapGift(row.gifts) : null;
+  return {
+    id: row.id,
+    giftId: row.gift_id,
+    giftName: gift?.name || 'Hediye',
+    giftImage: gift?.image || '🎁',
+    sponsorName: row.sponsors?.name || 'Sponsor',
+    message: row.message || '',
+    isActive: row.is_active ?? true,
   };
 }

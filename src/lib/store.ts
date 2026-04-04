@@ -1,23 +1,29 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Gift, GiftAction, Notification, GiftCategory, Partner, Sponsor, FraudFlag } from '@/types';
+import toast from 'react-hot-toast';
+
+// Import server actions
 import {
-  fetchCurrentUser,
-  fetchAllUsers,
-  fetchGifts as fetchGiftsFromDB,
-  fetchGiftActions as fetchGiftActionsFromDB,
-  fetchAllGiftActions,
-  createGiftAction,
-  redeemGiftAction,
-  fetchPartners as fetchPartnersFromDB,
-  fetchSponsors as fetchSponsorsFromDB,
-  fetchNotifications as fetchNotifsFromDB,
-  markNotificationRead as markNotifReadInDB,
-  createNotification,
-  fetchFraudFlags as fetchFraudFlagsFromDB,
-  decrementGiftStock,
-  incrementUserScore,
-} from './supabase/queries';
+  getUsers,
+  getGifts,
+  getGiftActions,
+  getAllGiftActions,
+  sendGift,
+  redeemGift,
+  getPartners,
+  getSponsors,
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsRead,
+  getFraudFlags,
+} from './actions';
+
+import {
+  getCurrentUser,
+  signInWithPhone,
+} from './actions/auth';
+
 import {
   MOCK_USERS,
   MOCK_GIFTS,
@@ -58,6 +64,9 @@ interface AppState {
   isLoading: boolean;
   isInitialized: boolean;
 
+  // Error handling
+  errors: Record<string, string>;
+
   // Auth Actions
   setPhone: (phone: string) => void;
   login: (phone: string) => Promise<void>;
@@ -81,6 +90,10 @@ interface AppState {
   // Notification Actions
   markNotificationRead: (id: string) => void;
   markAllRead: () => void;
+
+  // Error handling
+  addError: (key: string, message: string) => void;
+  clearError: (key: string) => void;
 
   // Helpers
   getReceivedGifts: () => GiftAction[];
@@ -107,57 +120,94 @@ export const useAppStore = create<AppState>()(
       sponsors: [],
       allUsers: [],
       fraudFlags: [],
+      errors: {},
 
       // Auth
       setPhone: (phone) => set({ pendingPhone: phone }),
 
       login: async (phone) => {
-        // Try to find user in Supabase
-        const users = await fetchAllUsers();
-        const user = users.find(u => u.phone === phone);
-        if (user) {
-          set({ currentUser: user, isAuthenticated: true, pendingPhone: null });
-        } else {
-          // Create a demo user locally
-          const newUser: User = {
-            id: `user-${Date.now()}`,
-            phone,
-            name: undefined,
-            role: 'user',
-            tier: 'free',
-            iyikiScore: 0,
-            dailySendCount: 0,
-            dailySendLimit: 1,
-            dailyReceiveCount: 0,
-            createdAt: new Date().toISOString(),
-            status: 'active',
-            notificationPrefs: { push: true, sms: true },
-          };
-          set({ currentUser: newUser, isAuthenticated: true, pendingPhone: null });
+        set({ isLoading: true });
+        try {
+          // Try server auth first
+          const result = await signInWithPhone(phone);
+          if (result.error) {
+            // Fallback to demo mode
+            const newUser: User = {
+              id: `user-${Date.now()}`,
+              phone,
+              name: undefined,
+              role: 'user',
+              tier: 'free',
+              iyikiScore: 0,
+              dailySendCount: 0,
+              dailySendLimit: 1,
+              dailyReceiveCount: 0,
+              createdAt: new Date().toISOString(),
+              status: 'active',
+              notificationPrefs: { push: true, sms: true },
+            };
+            set({ currentUser: newUser, isAuthenticated: true, pendingPhone: null, isLoading: false });
+            toast.success('Demo mode activated');
+          } else {
+            // Try to fetch current user from server
+            const userResult = await getCurrentUser();
+            if (userResult.data) {
+              set({ currentUser: userResult.data, isAuthenticated: true, pendingPhone: null, isLoading: false });
+              get().initializeData();
+            } else {
+              // Fallback to demo
+              const newUser: User = {
+                id: `user-${Date.now()}`,
+                phone,
+                name: undefined,
+                role: 'user',
+                tier: 'free',
+                iyikiScore: 0,
+                dailySendCount: 0,
+                dailySendLimit: 1,
+                dailyReceiveCount: 0,
+                createdAt: new Date().toISOString(),
+                status: 'active',
+                notificationPrefs: { push: true, sms: true },
+              };
+              set({ currentUser: newUser, isAuthenticated: true, pendingPhone: null, isLoading: false });
+              toast.success('Demo mode activated');
+            }
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Login failed';
+          get().addError('login', message);
+          toast.error(message);
+          set({ isLoading: false });
         }
-        // Load data after login
-        get().initializeData();
       },
 
       loginAsRole: async (role) => {
         set({ isLoading: true });
         try {
-          const users = await fetchAllUsers();
+          const result = await getUsers();
           let user: User | undefined;
-          if (role === 'admin') user = users.find(u => u.role === 'admin');
-          else if (role === 'partner') user = users.find(u => u.role === 'partner');
-          else if (role === 'sponsor') user = users.find(u => u.role === 'sponsor');
-          else user = users.find(u => u.role === 'user');
-          
+
+          if (result.data && result.data.length > 0) {
+            if (role === 'admin') user = result.data.find(u => u.role === 'admin');
+            else if (role === 'partner') user = result.data.find(u => u.role === 'partner');
+            else if (role === 'sponsor') user = result.data.find(u => u.role === 'sponsor');
+            else user = result.data.find(u => u.role === 'user');
+          }
+
           if (!user) {
             // Fallback to demo data
             const demo = DEMO_USERS.find(u => u.role === role) || DEMO_USERS[0];
             user = demo as User;
+            toast(`Using demo ${role} account`, { icon: 'ℹ️' });
           }
-          
+
           set({ currentUser: user, isAuthenticated: true, pendingPhone: null, isLoading: false });
           get().initializeData();
-        } catch {
+        } catch (error) {
+          const message = error instanceof Error ? error.message : `Failed to login as ${role}`;
+          get().addError('loginAsRole', message);
+          toast.error(message);
           // Fallback
           const demo = DEMO_USERS.find(u => u.role === role) || DEMO_USERS[0];
           set({ currentUser: demo as User, isAuthenticated: true, pendingPhone: null, isLoading: false });
@@ -196,7 +246,9 @@ export const useAppStore = create<AppState>()(
             state.loadGiftActions(),
             state.loadNotifications(),
           ]);
-        } catch {
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to load data';
+          get().addError('initializeData', message);
           // Fallback to mock data
           set({
             gifts: MOCK_GIFTS,
@@ -210,9 +262,16 @@ export const useAppStore = create<AppState>()(
 
       loadGifts: async () => {
         try {
-          const gifts = await fetchGiftsFromDB();
-          set({ gifts: gifts.length > 0 ? gifts : MOCK_GIFTS });
-        } catch {
+          const result = await getGifts();
+          if (result.error) {
+            get().addError('loadGifts', result.error);
+            set({ gifts: MOCK_GIFTS });
+          } else {
+            set({ gifts: result.data && result.data.length > 0 ? result.data : MOCK_GIFTS });
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to load gifts';
+          get().addError('loadGifts', message);
           set({ gifts: MOCK_GIFTS });
         }
       },
@@ -221,9 +280,16 @@ export const useAppStore = create<AppState>()(
         const user = get().currentUser;
         if (!user) return;
         try {
-          const actions = await fetchGiftActionsFromDB(user.id, user.phone);
-          set({ giftActions: actions.length > 0 ? actions : MOCK_GIFT_ACTIONS });
-        } catch {
+          const result = await getGiftActions(user.id, user.phone);
+          if (result.error) {
+            get().addError('loadGiftActions', result.error);
+            set({ giftActions: MOCK_GIFT_ACTIONS });
+          } else {
+            set({ giftActions: result.data && result.data.length > 0 ? result.data : MOCK_GIFT_ACTIONS });
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to load gift actions';
+          get().addError('loadGiftActions', message);
           set({ giftActions: MOCK_GIFT_ACTIONS });
         }
       },
@@ -232,13 +298,23 @@ export const useAppStore = create<AppState>()(
         const user = get().currentUser;
         if (!user) return;
         try {
-          const notifs = await fetchNotifsFromDB(user.id);
-          const data = notifs.length > 0 ? notifs : MOCK_NOTIFICATIONS;
-          set({
-            notifications: data,
-            unreadCount: data.filter(n => !n.isRead).length,
-          });
-        } catch {
+          const result = await getNotifications(user.id);
+          if (result.error) {
+            get().addError('loadNotifications', result.error);
+            set({
+              notifications: MOCK_NOTIFICATIONS,
+              unreadCount: MOCK_NOTIFICATIONS.filter(n => !n.isRead).length,
+            });
+          } else {
+            const data = result.data && result.data.length > 0 ? result.data : MOCK_NOTIFICATIONS;
+            set({
+              notifications: data,
+              unreadCount: data.filter(n => !n.isRead).length,
+            });
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to load notifications';
+          get().addError('loadNotifications', message);
           set({
             notifications: MOCK_NOTIFICATIONS,
             unreadCount: MOCK_NOTIFICATIONS.filter(n => !n.isRead).length,
@@ -249,22 +325,33 @@ export const useAppStore = create<AppState>()(
       loadAdminData: async () => {
         set({ isLoading: true });
         try {
-          const [partners, sponsors, users, fraudFlags, actions] = await Promise.all([
-            fetchPartnersFromDB(),
-            fetchSponsorsFromDB(),
-            fetchAllUsers(),
-            fetchFraudFlagsFromDB(),
-            fetchAllGiftActions(),
+          const [partnersResult, sponsorsResult, usersResult, fraudFlagsResult, actionsResult] = await Promise.all([
+            getPartners(),
+            getSponsors(),
+            getUsers(),
+            getFraudFlags(),
+            getAllGiftActions(),
           ]);
+
           set({
-            partners: partners.length > 0 ? partners : MOCK_PARTNERS,
-            sponsors: sponsors.length > 0 ? sponsors : MOCK_SPONSORS,
-            allUsers: users.length > 0 ? users : (MOCK_USERS as User[]),
-            fraudFlags: fraudFlags.length > 0 ? fraudFlags : MOCK_FRAUD_FLAGS,
-            giftActions: actions.length > 0 ? actions : MOCK_GIFT_ACTIONS,
+            partners: partnersResult.data && partnersResult.data.length > 0 ? partnersResult.data : MOCK_PARTNERS,
+            sponsors: sponsorsResult.data && sponsorsResult.data.length > 0 ? sponsorsResult.data : MOCK_SPONSORS,
+            allUsers: usersResult.data && usersResult.data.length > 0 ? usersResult.data : (MOCK_USERS as User[]),
+            fraudFlags: fraudFlagsResult.data && fraudFlagsResult.data.length > 0 ? fraudFlagsResult.data : MOCK_FRAUD_FLAGS,
+            giftActions: actionsResult.data && actionsResult.data.length > 0 ? actionsResult.data : MOCK_GIFT_ACTIONS,
             isLoading: false,
           });
-        } catch {
+
+          // Log errors if any occurred
+          if (partnersResult.error) get().addError('loadAdminData_partners', partnersResult.error);
+          if (sponsorsResult.error) get().addError('loadAdminData_sponsors', sponsorsResult.error);
+          if (usersResult.error) get().addError('loadAdminData_users', usersResult.error);
+          if (fraudFlagsResult.error) get().addError('loadAdminData_fraudFlags', fraudFlagsResult.error);
+          if (actionsResult.error) get().addError('loadAdminData_actions', actionsResult.error);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to load admin data';
+          get().addError('loadAdminData', message);
+          toast.error(message);
           set({
             partners: MOCK_PARTNERS,
             sponsors: MOCK_SPONSORS,
@@ -282,34 +369,81 @@ export const useAppStore = create<AppState>()(
       sendGift: async (giftId, receiverPhone, receiverName, note) => {
         const state = get();
         const user = state.currentUser;
-        if (!user) return null;
+        if (!user) {
+          get().addError('sendGift', 'User not authenticated');
+          return null;
+        }
 
-        if (user.dailySendCount >= user.dailySendLimit) return null;
-        if (user.phone === receiverPhone) return null;
+        if (user.dailySendCount >= user.dailySendLimit) {
+          const msg = 'Daily send limit reached';
+          get().addError('sendGift', msg);
+          toast.error(msg);
+          return null;
+        }
+
+        if (user.phone === receiverPhone) {
+          const msg = 'Cannot send gift to yourself';
+          get().addError('sendGift', msg);
+          toast.error(msg);
+          return null;
+        }
 
         const gift = state.gifts.find(g => g.id === giftId);
-        if (!gift || gift.stock <= 0) return null;
+        if (!gift || gift.stock <= 0) {
+          const msg = 'Gift is not available';
+          get().addError('sendGift', msg);
+          toast.error(msg);
+          return null;
+        }
 
         set({ isSending: true });
 
-        const now = new Date();
-        const redeemCode = `TKR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-        const expiresAt = new Date(now.getTime() + gift.expiryHours * 3600000).toISOString();
-
         try {
-          const action = await createGiftAction({
-            giftId, senderId: user.id, receiverPhone, note, redeemCode, expiresAt,
+          const result = await sendGift(user.id, {
+            giftId,
+            receiverPhone,
+            receiverName,
+            note,
           });
 
-          if (action) {
-            await Promise.all([
-              decrementGiftStock(giftId),
-              incrementUserScore(user.id),
-            ]);
-
-            // Update local state
+          if (result.error) {
+            get().addError('sendGift', result.error);
+            toast.error(result.error);
+            set({ isSending: false });
+            // Fallback: create action locally
+            const now = new Date();
+            const redeemCode = `TKR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            const expiresAt = new Date(now.getTime() + gift.expiryHours * 3600000).toISOString();
+            const localAction: GiftAction = {
+              id: `action-${Date.now()}`,
+              giftId,
+              gift,
+              senderId: user.id,
+              senderName: user.name || 'Bilinmeyen',
+              receiverPhone,
+              receiverName,
+              note,
+              status: 'pending',
+              redeemCode,
+              createdAt: now.toISOString(),
+              expiresAt,
+            };
             set(state => ({
-              giftActions: [action, ...state.giftActions],
+              giftActions: [localAction, ...state.giftActions],
+              gifts: state.gifts.map(g => g.id === giftId ? { ...g, stock: g.stock - 1 } : g),
+              currentUser: state.currentUser ? {
+                ...state.currentUser,
+                dailySendCount: state.currentUser.dailySendCount + 1,
+                iyikiScore: state.currentUser.iyikiScore + 1,
+              } : null,
+            }));
+            return localAction;
+          }
+
+          if (result.data) {
+            // Update local state with server response
+            set(state => ({
+              giftActions: [result.data!, ...state.giftActions],
               gifts: state.gifts.map(g => g.id === giftId ? { ...g, stock: g.stock - 1 } : g),
               currentUser: state.currentUser ? {
                 ...state.currentUser,
@@ -318,55 +452,69 @@ export const useAppStore = create<AppState>()(
               } : null,
               isSending: false,
             }));
-
-            return action;
+            toast.success('Gift sent successfully!');
+            return result.data;
           }
-        } catch { /* ignore */ }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to send gift';
+          get().addError('sendGift', message);
+          toast.error(message);
+          set({ isSending: false });
+        }
 
-        // Fallback: create action locally
-        const localAction: GiftAction = {
-          id: `action-${Date.now()}`, giftId, gift, senderId: user.id,
-          senderName: user.name || 'Bilinmeyen', receiverPhone, receiverName, note,
-          status: 'pending', redeemCode, createdAt: now.toISOString(), expiresAt,
-        };
-
-        set(state => ({
-          giftActions: [localAction, ...state.giftActions],
-          gifts: state.gifts.map(g => g.id === giftId ? { ...g, stock: g.stock - 1 } : g),
-          currentUser: state.currentUser ? {
-            ...state.currentUser,
-            dailySendCount: state.currentUser.dailySendCount + 1,
-            iyikiScore: state.currentUser.iyikiScore + 1,
-          } : null,
-          isSending: false,
-        }));
-
-        return localAction;
+        return null;
       },
 
       redeemGift: async (actionId, branchId, branchName) => {
         const state = get();
         const action = state.giftActions.find(a => a.id === actionId);
-        if (!action || action.status !== 'pending') return false;
+        if (!action || action.status !== 'pending') {
+          const msg = 'Gift cannot be redeemed';
+          get().addError('redeemGift', msg);
+          toast.error(msg);
+          return false;
+        }
 
         try {
-          await redeemGiftAction(actionId, branchId);
-        } catch { /* ignore */ }
+          const result = await redeemGift(actionId, branchId);
+          if (result.error) {
+            get().addError('redeemGift', result.error);
+            toast.error(result.error);
+            // Still update local state as fallback
+            set(state => ({
+              giftActions: state.giftActions.map(a =>
+                a.id === actionId
+                  ? { ...a, status: 'claimed' as const, claimedAt: new Date().toISOString(), branchId, branchName }
+                  : a
+              ),
+            }));
+            return true;
+          }
 
-        set(state => ({
-          giftActions: state.giftActions.map(a =>
-            a.id === actionId
-              ? { ...a, status: 'claimed' as const, claimedAt: new Date().toISOString(), branchId, branchName }
-              : a
-          ),
-        }));
+          if (result.data) {
+            set(state => ({
+              giftActions: state.giftActions.map(a =>
+                a.id === actionId ? result.data! : a
+              ),
+            }));
+            toast.success('Gift redeemed successfully!');
+            return true;
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to redeem gift';
+          get().addError('redeemGift', message);
+          toast.error(message);
+        }
 
-        return true;
+        return false;
       },
 
       // Notifications
       markNotificationRead: (id) => {
-        markNotifReadInDB(id).catch(() => {});
+        markNotificationAsRead(id).catch(error => {
+          const message = error instanceof Error ? error.message : 'Failed to mark notification as read';
+          get().addError('markNotificationRead', message);
+        });
         set(state => ({
           notifications: state.notifications.map(n => n.id === id ? { ...n, isRead: true } : n),
           unreadCount: Math.max(0, state.unreadCount - 1),
@@ -374,12 +522,32 @@ export const useAppStore = create<AppState>()(
       },
 
       markAllRead: () => {
-        const notifs = get().notifications.filter(n => !n.isRead);
-        notifs.forEach(n => markNotifReadInDB(n.id).catch(() => {}));
+        const user = get().currentUser;
+        if (user) {
+          markAllNotificationsRead(user.id).catch(error => {
+            const message = error instanceof Error ? error.message : 'Failed to mark all notifications as read';
+            get().addError('markAllRead', message);
+          });
+        }
         set(state => ({
           notifications: state.notifications.map(n => ({ ...n, isRead: true })),
           unreadCount: 0,
         }));
+      },
+
+      // Error handling
+      addError: (key, message) => {
+        set(state => ({
+          errors: { ...state.errors, [key]: message },
+        }));
+      },
+
+      clearError: (key) => {
+        set(state => {
+          const newErrors = { ...state.errors };
+          delete newErrors[key];
+          return { errors: newErrors };
+        });
       },
 
       // Helpers

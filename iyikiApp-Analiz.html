@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iyikiApp - Proje Analizi & Gelişim Planı</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.7;
+        }
+        .hero {
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%);
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .hero h1 { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 8px; }
+        .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.8); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        .section {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            border: 1px solid #2a2a2a;
+        }
+        .section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f43f5e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #fb7185;
+            margin: 20px 0 10px;
+        }
+        .section p, .section li {
+            color: #b0b0b0;
+            font-size: 0.95rem;
+        }
+        .section ul { padding-left: 20px; }
+        .section li { margin-bottom: 6px; }
+        .mermaid-container {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .badge-green { background: #065f46; color: #6ee7b7; }
+        .badge-yellow { background: #78350f; color: #fcd34d; }
+        .badge-red { background: #7f1d1d; color: #fca5a5; }
+        .badge-blue { background: #1e3a5f; color: #93c5fd; }
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .tech-card {
+            background: #222;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        .tech-card strong { color: #f9a8d4; }
+        .phase {
+            border-left: 3px solid #f43f5e;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: #1f1f1f;
+            border-radius: 0 10px 10px 0;
+        }
+        .phase h4 { color: #fb7185; font-size: 1.05rem; margin-bottom: 6px; }
+        .score-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .score-table th, .score-table td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .score-table th { color: #f43f5e; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+        .score-table td { color: #ccc; font-size: 0.9rem; }
+        .meter {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .meter-fill { height: 100%; border-radius: 4px; }
+        .toc { columns: 2; column-gap: 24px; }
+        .toc a { color: #fb7185; text-decoration: none; display: block; padding: 4px 0; }
+        .toc a:hover { color: #f43f5e; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <h1>🎁 iyikiApp</h1>
+    <p>Proje Analizi, Mimari Diyagramlar & Gelişim Planı</p>
+    <p style="margin-top:8px;font-size:0.85rem;opacity:0.7">Tarih: 4 Nisan 2026</p>
+</div>
+
+<div class="container">
+
+<!-- İÇİNDEKİLER -->
+<div class="section">
+    <h2>📋 İçindekiler</h2>
+    <div class="toc">
+        <a href="#tech">1. Teknoloji Yığını</a>
+        <a href="#arch">2. Sistem Mimarisi</a>
+        <a href="#db">3. Veritabanı ER Diyagramı</a>
+        <a href="#pages">4. Sayfa & Route Yapısı</a>
+        <a href="#flow">5. Hediye Yaşam Döngüsü</a>
+        <a href="#state">6. State Management Akışı</a>
+        <a href="#analysis">7. Mevcut Durum Analizi</a>
+        <a href="#risks">8. Risk & Eksiklik Matrisi</a>
+        <a href="#roadmap">9. Gelişim Planı (Roadmap)</a>
+    </div>
+</div>
+
+<!-- 1. TEKNOLOJİ YIĞINI -->
+<div class="section" id="tech">
+    <h2>🛠️ 1. Teknoloji Yığını</h2>
+    <div class="tech-grid">
+        <div class="tech-card"><strong>Framework:</strong><br/>Next.js 16.2.2 (App Router)</div>
+        <div class="tech-card"><strong>UI:</strong><br/>React 19.2.4 + Tailwind CSS 4</div>
+        <div class="tech-card"><strong>Animasyon:</strong><br/>Framer Motion 12.38</div>
+        <div class="tech-card"><strong>State:</strong><br/>Zustand 5 + persist</div>
+        <div class="tech-card"><strong>Backend:</strong><br/>Supabase (Auth + PostgreSQL)</div>
+        <div class="tech-card"><strong>ORM:</strong><br/>Prisma 7.6 (şema tanımı)</div>
+        <div class="tech-card"><strong>Diğer:</strong><br/>QRCode, date-fns, uuid, lucide-react</div>
+        <div class="tech-card"><strong>Dil:</strong><br/>TypeScript 5, ESLint 9</div>
+    </div>
+</div>
+
+<!-- 2. SİSTEM MİMARİSİ -->
+<div class="section" id="arch">
+    <h2>🏗️ 2. Sistem Mimarisi</h2>
+    <p>Aşağıdaki diyagram, iyikiApp'in genel mimari yapısını göstermektedir. Client (Next.js) → State (Zustand) → Backend (Supabase) katmanları ve 4 farklı kullanıcı rolünün eriştiği panel yapıları yer almaktadır.</p>
+    <div class="mermaid-container">
+        <pre class="mermaid">
+graph TB
+    subgraph CLIENT["🖥️ Client Layer - Next.js 16 App Router"]
+        direction LR
+        subgraph ROLES["Rol Bazlı Paneller"]
+            USER_PANEL["👤 User Panel<br/>home, send, profile<br/>notifications, redeem<br/>drop, achievements<br/>community, premium"]
+            ADMIN_PANEL["⚙️ Admin Panel<br/>dashboard, users<br/>gifts, partners<br/>sponsors, fraud"]
+            PARTNER_PANEL["🏪 Partner Panel<br/>dashboard, products<br/>branches, campaigns<br/>reports"]
+            SPONSOR_PANEL["💰 Sponsor Panel<br/>dashboard, campaigns<br/>impact"]
+        end
+        AUTH_PAGES["🔐 Auth<br/>login + verify"]
+        ROOT_ROUTER["🔀 Root Router<br/>Rol bazlı yönlendirme"]
+    end
+
+    subgraph STATE["🗄️ State Layer"]
+        ZUSTAND["Zustand Store<br/>+ persist middleware<br/>+ mock data fallback"]
+        TYPES["TypeScript Types<br/>User, Gift, GiftAction<br/>Partner, Sponsor, etc."]
+    end
+
+    subgraph DATA["📡 Data Layer"]
+        QUERIES["Supabase Queries<br/>CRUD operations"]
+        MAPPERS["Data Mappers<br/>snake_case → camelCase"]
+        SB_CLIENT["Supabase Client<br/>SSR + Browser"]
+    end
+
+    subgraph SUPABASE["☁️ Supabase Backend"]
+        SB_AUTH["Auth Service<br/>Phone OTP"]
+        SB_DB["PostgreSQL<br/>12 tablo"]
+        SB_RLS["Row Level Security"]
+        SB_RPC["RPC Functions"]
+        SB_TRIGGER["Triggers<br/>handle_new_user"]
+    end
+
+    AUTH_PAGES --> ROOT_ROUTER
+    ROOT_ROUTER --> ROLES
+    ROLES --> ZUSTAND
+    ZUSTAND --> QUERIES
+    QUERIES --> MAPPERS
+    MAPPERS --> SB_CLIENT
+    SB_CLIENT --> SUPABASE
+
+    style CLIENT fill:#1e293b,stroke:#3b82f6,color:#fff
+    style STATE fill:#1e293b,stroke:#a855f7,color:#fff
+    style DATA fill:#1e293b,stroke:#22c55e,color:#fff
+    style SUPABASE fill:#1e293b,stroke:#f43f5e,color:#fff
+        </pre>
+    </div>
+</div>
+
+<!-- 3. VERİTABANI ER DİYAGRAMI -->
+<div class="section" id="db">
+    <h2>🗃️ 3. Veritabanı ER Diyagramı</h2>
+    <p>12 tablo, ilişkiler ve enum'lar ile birlikte tüm veritabanı yapısı:</p>
+    <div class="mermaid-container">
+        <pre class="mermaid">
+erDiagram
+    users ||--o{ gift_actions : "sender"
+    users ||--o{ gift_actions : "receiver"
+    users ||--o{ devices : "has"
+    users ||--o{ notifications : "receives"
+    users ||--o{ fraud_flags : "flagged"
+    users ||--o{ scheduled_gifts : "schedules"
+
+    partners ||--o{ gifts : "provides"
+    partners ||--o{ branches : "has"
+
+    sponsors ||--o{ gifts : "sponsors"
+
+    gifts ||--o{ gift_actions : "used_in"
+    branches ||--o{ gift_actions : "redeemed_at"
+
+    users {
+        uuid id PK
+        text phone UK
+        text name
+        user_role role
+        premium_tier tier
+        int iyki_score
+        int daily_send_count
+        int daily_send_limit
+        user_status status
+        timestamptz deleted_at
+    }
+
+    partners {
+        uuid id PK
+        text name
+        text api_key UK
+        text webhook_url
+        boolean is_active
+    }
+
+    branches {
+        uuid id PK
+        uuid partner_id FK
+        text name
+        text address
+        float lat
+        float lng
+        boolean is_active
+    }
+
+    gifts {
+        uuid id PK
+        uuid partner_id FK
+        uuid sponsor_id FK
+        text name
+        gift_category category
+        int stock
+        int expiry_hours
+        boolean is_premium
+    }
+
+    gift_actions {
+        uuid id PK
+        uuid gift_id FK
+        uuid sender_id FK
+        uuid receiver_id FK
+        text receiver_phone
+        text note
+        gift_action_status status
+        text redeem_code UK
+        uuid branch_id FK
+        timestamptz expires_at
+        timestamptz claimed_at
+        timestamptz pooled_at
+    }
+
+    sponsors {
+        uuid id PK
+        text name
+        float budget
+        float spent
+        timestamptz campaign_start
+        timestamptz campaign_end
+    }
+
+    devices {
+        uuid id PK
+        uuid user_id FK
+        text fingerprint UK
+        text platform
+        float trust_score
+        boolean is_blacklisted
+    }
+
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        notification_type type
+        text title
+        text message
+        boolean is_read
+    }
+
+    fraud_flags {
+        uuid id PK
+        uuid user_id FK
+        fraud_type type
+        fraud_severity severity
+        text description
+        boolean resolved
+    }
+
+    scheduled_gifts {
+        uuid id PK
+        uuid user_id FK
+        text gift_id
+        text receiver_phone
+        timestamptz scheduled_for
+        boolean is_processed
+    }
+
+    audit_logs {
+        uuid id PK
+        text user_id
+        text action
+        jsonb metadata
+    }
+
+    analytics_events {
+        uuid id PK
+        text event_name
+        text user_id
+        jsonb properties
+    }
+        </pre>
+    </div>
+</div>
+
+<!-- 4. SAYFA & ROUTE YAPISI -->
+<div class="section" id="pages">
+    <h2>📄 4. Sayfa & Route Yapısı</h2>
+    <div class="mermaid-container">
+        <pre class="mermaid">
+graph LR
+    ROOT["/"] --> AUTH_CHECK{"Authenticated?"}
+    AUTH_CHECK -->|Hayır| LOGIN["/login"]
+    LOGIN --> VERIFY["/verify"]
+    AUTH_CHECK -->|Evet| ROLE_CHECK{"User Role?"}
+
+    ROLE_CHECK -->|user| HOME["/home"]
+    ROLE_CHECK -->|admin| ADMIN["/admin"]
+    ROLE_CHECK -->|partner| PARTNER_D["/partner"]
+    ROLE_CHECK -->|sponsor| SPONSOR_D["/sponsor"]
+
+    HOME --> SEND["/send"]
+    HOME --> PROFILE["/profile"]
+    HOME --> NOTIF["/notifications"]
+    HOME --> DROP["/drop"]
+    HOME --> ACHIEVE["/achievements"]
+    HOME --> COMMUNITY["/community"]
+    HOME --> PREMIUM["/premium"]
+
+    SEND --> SEND_DETAIL["/send/:giftId"]
+    HOME --> REDEEM["/redeem/:actionId"]
+    HOME --> GIFT_CODE["/gift/:code"]
+
+    ADMIN --> A_USERS["/admin/users"]
+    ADMIN --> A_GIFTS["/admin/gifts"]
+    ADMIN --> A_PARTNERS["/admin/partners"]
+    ADMIN --> A_SPONSORS["/admin/sponsors"]
+    ADMIN --> A_FRAUD["/admin/fraud"]
+
+    PARTNER_D --> P_PRODUCTS["/partner/products"]
+    PARTNER_D --> P_BRANCHES["/partner/branches"]
+    PARTNER_D --> P_CAMPAIGNS["/partner/campaigns"]
+    PARTNER_D --> P_REPORTS["/partner/reports"]
+
+    SPONSOR_D --> S_CAMPAIGNS["/sponsor/campaigns"]
+    SPONSOR_D --> S_IMPACT["/sponsor/impact"]
+
+    style ROOT fill:#f43f5e,color:#fff
+    style HOME fill:#3b82f6,color:#fff
+    style ADMIN fill:#a855f7,color:#fff
+    style PARTNER_D fill:#22c55e,color:#fff
+    style SPONSOR_D fill:#f59e0b,color:#fff
+        </pre>
+    </div>
+</div>
+
+<!-- 5. HEDİYE YAŞAM DÖNGÜSÜ -->
+<div class="section" id="flow">
+    <h2>🎁 5. Hediye Yaşam Döngüsü (Gift Lifecycle)</h2>
+    <p>Bir hediyenin gönderilmesinden kullanılmasına veya askıda havuzuna düşmesine kadar geçen süreç:</p>
+    <div class="mermaid-container">
+        <pre class="mermaid">
+stateDiagram-v2
+    [*] --> PENDING: Hediye gönderildi
+    PENDING --> CLAIMED: Alıcı QR ile kullandı
+    PENDING --> EXPIRED: Süre doldu (72 saat)
+    EXPIRED --> SOCIAL_POOL: Askıda havuzuna aktarıldı
+    SOCIAL_POOL --> DISTRIBUTED: Havuzdan birine dağıtıldı
+    PENDING --> CANCELLED: Gönderici iptal etti
+    CLAIMED --> [*]: Tamamlandı
+    DISTRIBUTED --> [*]: Tamamlandı
+    CANCELLED --> [*]: Sonlandırıldı
+
+    note right of PENDING
+        Gönderici: dailySendCount++
+        Alıcıya SMS/Push bildirim
+        redeemCode üretildi
+    end note
+
+    note right of CLAIMED
+        Branch seçildi
+        QR doğrulandı
+        iyikiScore++
+    end note
+
+    note left of SOCIAL_POOL
+        "Askıda Kahve" modeli
+        Topluluk havuzuna düşer
+        İhtiyaç sahibine ulaşır
+    end note
+        </pre>
+    </div>
+</div>
+
+<!-- 6. STATE MANAGEMENT -->
+<div class="section" id="state">
+    <h2>⚡ 6. State Management Akışı</h2>
+    <div class="mermaid-container">
+        <pre class="mermaid">
+flowchart TB
+    subgraph ZUSTAND["Zustand Store"]
+        direction TB
+        AUTH_STATE["Auth State<br/>currentUser, isAuthenticated<br/>pendingPhone"]
+        DATA_STATE["Data State<br/>gifts, giftActions<br/>notifications, partners<br/>sponsors, allUsers, fraudFlags"]
+        UI_STATE["UI State<br/>isSending, isLoading<br/>isInitialized, selectedCategory"]
+    end
+
+    subgraph PERSIST["Persist Middleware"]
+        LS["localStorage<br/>iyiki-storage"]
+    end
+
+    subgraph ACTIONS["Store Actions"]
+        LOGIN_ACT["login / loginAsRole / logout"]
+        DATA_ACT["initializeData / loadGifts<br/>loadGiftActions / loadNotifications<br/>loadAdminData"]
+        GIFT_ACT["sendGift / redeemGift"]
+        NOTIF_ACT["markNotificationRead / markAllRead"]
+    end
+
+    subgraph SUPABASE_Q["Supabase Queries"]
+        FETCH["fetchGifts / fetchGiftActions<br/>fetchAllUsers / fetchPartners<br/>fetchSponsors / fetchFraudFlags"]
+        MUTATE["createGiftAction / redeemGiftAction<br/>decrementGiftStock / incrementUserScore"]
+    end
+
+    subgraph FALLBACK["Fallback"]
+        MOCK["Mock Data<br/>Her query hata alırsa<br/>mock veriye düşer"]
+    end
+
+    AUTH_STATE --> PERSIST
+    ACTIONS --> ZUSTAND
+    ACTIONS --> SUPABASE_Q
+    SUPABASE_Q -->|Error| FALLBACK
+    FALLBACK --> ZUSTAND
+
+    style ZUSTAND fill:#312e81,stroke:#6366f1,color:#fff
+    style PERSIST fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style ACTIONS fill:#14532d,stroke:#22c55e,color:#fff
+    style FALLBACK fill:#7f1d1d,stroke:#ef4444,color:#fff
+        </pre>
+    </div>
+</div>
+
+<!-- 7. MEVCUT DURUM ANALİZİ -->
+<div class="section" id="analysis">
+    <h2>🔍 7. Mevcut Durum Analizi</h2>
+
+    <h3>Güçlü Yanlar</h3>
+    <ul>
+        <li><span class="badge badge-green">Konsept</span> "Fiyatsız hediye" fikri özgün ve duygusal bağ kuruyor. Türkiye'de benzeri yok.</li>
+        <li><span class="badge badge-green">Mimari</span> Next.js 16 App Router + Supabase: modern, hızlı geliştirme altyapısı.</li>
+        <li><span class="badge badge-green">Veri Modeli</span> 12 tablo ile kapsamlı bir şema: fraud koruma, askıda havuzu, planlı gönderim, analytics var.</li>
+        <li><span class="badge badge-green">Rol Sistemi</span> 4 farklı panel (User, Admin, Partner, Sponsor) ile çok taraflı platform mimarisi hazır.</li>
+        <li><span class="badge badge-green">Fallback</span> Supabase erişilemezse mock data'ya düşen resilient bir yapı var.</li>
+        <li><span class="badge badge-green">UX</span> Framer Motion ile akıcı animasyonlar, mobile-first tasarım.</li>
+    </ul>
+
+    <h3>Zayıf Yanlar & Eksiklikler</h3>
+    <ul>
+        <li><span class="badge badge-red">Auth</span> Gerçek Supabase Auth entegrasyonu eksik — login fonksiyonu kullanıcıyı DB'den bulup direkt giriş yapıyor, OTP doğrulaması yok.</li>
+        <li><span class="badge badge-red">API Katmanı</span> Hiçbir API route yok — tüm veritabanı işlemleri client-side'dan yapılıyor. Bu ciddi bir güvenlik açığı.</li>
+        <li><span class="badge badge-red">RPC</span> <code>decrement_gift_stock</code> ve <code>increment_user_score</code> RPC fonksiyonları çağrılıyor ama SQL tanımları yok.</li>
+        <li><span class="badge badge-yellow">Validasyon</span> Form validasyonu ve input sanitization eksik. Zod veya benzeri bir kütüphane kullanılmıyor.</li>
+        <li><span class="badge badge-yellow">Test</span> Hiçbir test dosyası yok — ne unit ne integration ne e2e.</li>
+        <li><span class="badge badge-yellow">Error Handling</span> Tüm catch blokları boş veya sadece fallback'e düşüyor. Kullanıcıya hata mesajı gösterilmiyor.</li>
+        <li><span class="badge badge-yellow">i18n</span> Türkçe hardcoded — çoklu dil desteği yok.</li>
+        <li><span class="badge badge-yellow">Accessibility</span> ARIA etiketleri ve keyboard navigation eksik.</li>
+        <li><span class="badge badge-red">Expire Cron</span> Süresi dolan hediyeleri otomatik EXPIRED yapan bir cron/edge function yok.</li>
+        <li><span class="badge badge-yellow">PWA</span> Service worker ve manifest.json yok — offline çalışma ve ana ekrana ekleme desteklenmiyor.</li>
+    </ul>
+
+    <h3>Tamamlanma Durumu</h3>
+    <table class="score-table">
+        <tr><th>Alan</th><th>Durum</th><th>Tamamlanma</th></tr>
+        <tr>
+            <td>Veritabanı Şeması</td>
+            <td><span class="badge badge-green">Tamamlandı</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:90%;background:#22c55e"></div></div></td>
+        </tr>
+        <tr>
+            <td>Frontend Sayfalar (User)</td>
+            <td><span class="badge badge-green">Temel yapı hazır</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:70%;background:#22c55e"></div></div></td>
+        </tr>
+        <tr>
+            <td>Admin Paneli</td>
+            <td><span class="badge badge-yellow">UI hazır, işlevsellik kısıtlı</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:50%;background:#eab308"></div></div></td>
+        </tr>
+        <tr>
+            <td>Partner Paneli</td>
+            <td><span class="badge badge-yellow">Sayfalar var, veri akışı eksik</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:40%;background:#eab308"></div></div></td>
+        </tr>
+        <tr>
+            <td>Sponsor Paneli</td>
+            <td><span class="badge badge-yellow">Temel sayfalar</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:35%;background:#eab308"></div></div></td>
+        </tr>
+        <tr>
+            <td>Auth (Gerçek OTP)</td>
+            <td><span class="badge badge-red">Eksik</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:15%;background:#ef4444"></div></div></td>
+        </tr>
+        <tr>
+            <td>API Routes / Server Actions</td>
+            <td><span class="badge badge-red">Yok</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:0%;background:#ef4444"></div></div></td>
+        </tr>
+        <tr>
+            <td>Test Coverage</td>
+            <td><span class="badge badge-red">Yok</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:0%;background:#ef4444"></div></div></td>
+        </tr>
+        <tr>
+            <td>Fraud Koruma (Backend)</td>
+            <td><span class="badge badge-red">Şema var, logic yok</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:15%;background:#ef4444"></div></div></td>
+        </tr>
+        <tr>
+            <td>Bildirim Sistemi (Push/SMS)</td>
+            <td><span class="badge badge-yellow">DB yapısı var, gönderim yok</span></td>
+            <td><div class="meter"><div class="meter-fill" style="width:25%;background:#eab308"></div></div></td>
+        </tr>
+    </table>
+</div>
+
+<!-- 8. RİSK MATRİSİ -->
+<div class="section" id="risks">
+    <h2>⚠️ 8. Risk & Eksiklik Matrisi</h2>
+    <div class="mermaid-container">
+        <pre class="mermaid">
+quadrantChart
+    title Risk Etki vs Olasılık Matrisi
+    x-axis "Düşük Olasılık" --> "Yüksek Olasılık"
+    y-axis "Düşük Etki" --> "Yüksek Etki"
+    quadrant-1 Kritik - Hemen Müdahale
+    quadrant-2 Planlı Çözüm
+    quadrant-3 İzle
+    quadrant-4 Rutin İyileştirme
+    "API güvenlik açığı": [0.85, 0.92]
+    "Auth bypass": [0.75, 0.88]
+    "Stock race condition": [0.60, 0.70]
+    "Expire cron eksik": [0.80, 0.65]
+    "Test yokluğu": [0.70, 0.55]
+    "Error handling": [0.65, 0.45]
+    "i18n eksik": [0.30, 0.25]
+    "PWA desteği": [0.25, 0.30]
+    "Accessibility": [0.40, 0.35]
+        </pre>
+    </div>
+</div>
+
+<!-- 9. GELİŞİM PLANI -->
+<div class="section" id="roadmap">
+    <h2>🚀 9. Gelişim Planı (Roadmap)</h2>
+
+    <div class="mermaid-container">
+        <pre class="mermaid">
+gantt
+    title iyikiApp Gelişim Planı 2026
+    dateFormat  YYYY-MM-DD
+    axisFormat  %d %b
+
+    section Faz 1 - Temel Güvenlik
+    API Routes / Server Actions           :crit, f1a, 2026-04-07, 10d
+    Gerçek Supabase Auth (OTP)            :crit, f1b, 2026-04-07, 7d
+    Input validation (Zod)                :f1c, after f1a, 5d
+    RPC fonksiyonları (SQL)               :f1d, 2026-04-07, 3d
+    Error handling iyileştirme            :f1e, after f1c, 4d
+
+    section Faz 2 - Core İşlevsellik
+    Gift expire cron job                  :crit, f2a, after f1a, 5d
+    Askıda havuzu dağıtım logic           :f2b, after f2a, 5d
+    Push notification entegrasyonu        :f2c, after f1b, 7d
+    SMS bildirim (Twilio/Netgsm)          :f2d, after f2c, 5d
+    Partner API webhook sistemi           :f2e, after f2a, 7d
+
+    section Faz 3 - Test & Kalite
+    Unit test altyapısı (Vitest)          :f3a, after f1e, 5d
+    Integration tests                     :f3b, after f3a, 7d
+    E2E tests (Playwright)                :f3c, after f3b, 7d
+    CI/CD pipeline                        :f3d, after f3a, 5d
+
+    section Faz 4 - Kullanıcı Deneyimi
+    Haftalık Drop mekanizması             :f4a, after f2b, 7d
+    Başarım/Rozet sistemi                 :f4b, after f4a, 5d
+    Topluluk havuzu (Üniversite modu)     :f4c, after f4b, 7d
+    1+1 İkram sponsor modeli              :f4d, after f4c, 5d
+    PWA desteği                           :f4e, after f4a, 5d
+
+    section Faz 5 - Büyüme & Ölçek
+    Analytics dashboard                   :f5a, after f4b, 7d
+    Partner self-service portal           :f5b, after f2e, 10d
+    Sponsor kampanya oluşturucu           :f5c, after f5b, 7d
+    Performance optimization              :f5d, after f5a, 5d
+    Accessibility (WCAG 2.1)              :f5e, after f4e, 7d
+        </pre>
+    </div>
+
+    <h3>Faz Detayları</h3>
+
+    <div class="phase">
+        <h4>🔴 Faz 1 — Temel Güvenlik & Altyapı (Nisan 2026, Hafta 1-3)</h4>
+        <p><strong>Hedef:</strong> Uygulamayı production-ready güvenlik seviyesine getirmek.</p>
+        <ul>
+            <li><strong>API Routes:</strong> Tüm veritabanı işlemlerini server-side'a taşı. Client'tan direkt Supabase erişimini kaldır.</li>
+            <li><strong>Gerçek Auth:</strong> Supabase Phone Auth ile OTP doğrulamasını aktif et. Session yönetimini düzgün kur.</li>
+            <li><strong>Validation:</strong> Zod ile tüm form ve API inputlarını doğrula. XSS ve injection koruması.</li>
+            <li><strong>RPC:</strong> <code>decrement_gift_stock</code> ve <code>increment_user_score</code> SQL fonksiyonlarını yaz + atomic transaction garantisi.</li>
+            <li><strong>Error Handling:</strong> Boş catch bloklarını kullanıcı dostu hata mesajlarıyla değiştir. Sentry veya benzeri monitoring ekle.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <h4>🟠 Faz 2 — Core İşlevsellik (Nisan-Mayıs 2026)</h4>
+        <p><strong>Hedef:</strong> Hediye yaşam döngüsünü tam otomatize etmek.</p>
+        <ul>
+            <li><strong>Expire Cron:</strong> Supabase Edge Function veya pg_cron ile süresi dolan hediyeleri otomatik EXPIRED yap.</li>
+            <li><strong>Askıda Havuzu:</strong> EXPIRED → SOCIAL_POOL → DISTRIBUTED geçişlerinin otomatik dağıtım algoritması.</li>
+            <li><strong>Push Notification:</strong> Firebase Cloud Messaging veya OneSignal ile gerçek zamanlı bildirimler.</li>
+            <li><strong>SMS:</strong> Netgsm veya Twilio ile hediye bildirim SMS'leri.</li>
+            <li><strong>Partner Webhook:</strong> Hediye kullanıldığında partner'a otomatik callback.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <h4>🟡 Faz 3 — Test & Kalite Güvencesi (Mayıs 2026)</h4>
+        <p><strong>Hedef:</strong> Güvenilir, regresyon-free bir geliştirme süreci.</p>
+        <ul>
+            <li><strong>Vitest:</strong> Store, queries, mappers için unit testler.</li>
+            <li><strong>Integration:</strong> API route testleri, Supabase mock ile.</li>
+            <li><strong>E2E:</strong> Playwright ile kritik kullanıcı akışları (login → send → redeem).</li>
+            <li><strong>CI/CD:</strong> GitHub Actions ile otomatik test, lint, build, deploy.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <h4>🟢 Faz 4 — Kullanıcı Deneyimi & Yeni Özellikler (Mayıs-Haziran 2026)</h4>
+        <p><strong>Hedef:</strong> Retention artıran gamification ve topluluk özellikleri.</p>
+        <ul>
+            <li><strong>Haftalık Drop:</strong> Sınırlı sayıda hediye, first-come-first-served mekanizması.</li>
+            <li><strong>Başarımlar:</strong> Jest Ustası, Askıda Kahraman gibi rozetler ile motivasyon.</li>
+            <li><strong>Topluluk Havuzu:</strong> Üniversite, mahalle, iş yeri bazlı hediye paylaşım grupları.</li>
+            <li><strong>1+1 İkram:</strong> Sponsor destekli "bir al bir hediye et" modeli.</li>
+            <li><strong>PWA:</strong> Offline desteği, ana ekrana ekleme, push notification.</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <h4>🔵 Faz 5 — Büyüme & Ölçeklendirme (Haziran-Temmuz 2026)</h4>
+        <p><strong>Hedef:</strong> İş ortaklarını güçlendirmek ve veri odaklı kararlar almak.</p>
+        <ul>
+            <li><strong>Analytics Dashboard:</strong> Gerçek zamanlı KPI'lar: DAU, hediye/gün, dönüşüm oranı.</li>
+            <li><strong>Partner Self-Service:</strong> Partner'ların kendi ürünlerini, stokunu, şubelerini yönettiği portal.</li>
+            <li><strong>Sponsor Kampanya Builder:</strong> Sponsor'ların kampanya oluşturup sonuçlarını takip ettiği araç.</li>
+            <li><strong>Performance:</strong> React Server Components, lazy loading, image optimization.</li>
+            <li><strong>Accessibility:</strong> WCAG 2.1 AA uyumluluğu.</li>
+        </ul>
+    </div>
+</div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'default',
+        securityLevel: 'loose',
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+        er: { useMaxWidth: true },
+        gantt: { useMaxWidth: true, fontSize: 11 }
+    });
+</script>
+</body>
+</html>
