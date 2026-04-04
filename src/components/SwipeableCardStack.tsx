@@ -482,6 +482,27 @@ export default function SwipeableCardStack({
   }, [gifts, selectedBrandId]);
 
   /* ═══════════════════════════════════════════════════════════════
+     LEVEL TRANSITIONS (tanimlar goVertical'dan ONCE olmali)
+     ═══════════════════════════════════════════════════════════════ */
+  const enterBrand = useCallback((brand: Brand) => {
+    setIsAnimating(true);
+    setSelectedBrandId(brand.id);
+    setProductIndex(0);
+    setTimeout(() => {
+      setLevel("products");
+      setTimeout(() => setIsAnimating(false), 600);
+    }, 50);
+  }, []);
+
+  const backToBrands = useCallback(() => {
+    setIsAnimating(true);
+    setLevel("brands");
+    setSelectedBrandId(null);
+    setProductIndex(0);
+    setTimeout(() => setIsAnimating(false), 600);
+  }, []);
+
+  /* ═══════════════════════════════════════════════════════════════
      VERTICAL NAVIGATION — ALWAYS changes BRAND, never product
 
      Marka seviyesinde: markalar arasi gec
@@ -592,27 +613,6 @@ export default function SwipeableCardStack({
     const preventScroll = (e: TouchEvent) => { e.preventDefault(); };
     el.addEventListener("touchmove", preventScroll, { passive: false });
     return () => { el.removeEventListener("touchmove", preventScroll); };
-  }, []);
-
-  /* ═══════════════════════════════════════════════════════════════
-     LEVEL TRANSITIONS
-     ═══════════════════════════════════════════════════════════════ */
-  const enterBrand = useCallback((brand: Brand) => {
-    setIsAnimating(true);
-    setSelectedBrandId(brand.id);
-    setProductIndex(0);
-    setTimeout(() => {
-      setLevel("products");
-      setTimeout(() => setIsAnimating(false), 600);
-    }, 50);
-  }, []);
-
-  const backToBrands = useCallback(() => {
-    setIsAnimating(true);
-    setLevel("brands");
-    setSelectedBrandId(null);
-    setProductIndex(0);
-    setTimeout(() => setIsAnimating(false), 600);
   }, []);
 
   /* ═══════════════════════════════════════════════════════════════
