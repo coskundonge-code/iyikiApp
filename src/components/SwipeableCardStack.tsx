@@ -693,13 +693,13 @@ export default function SwipeableCardStack({
   }
 
   return (
-    <div className="relative w-full flex flex-col items-center">
+    <div className="relative w-full flex flex-col items-center pb-4">
       {/* Breadcrumb */}
       <LevelBreadcrumb level={level} brandName={selectedBrand?.name} onBack={backToBrands} />
 
       {/* ── CARD STACK AREA ── */}
       <div className="relative w-full" style={{ maxWidth: "340px", margin: "0 auto" }}>
-        <div className="relative" style={{ height: "min(400px, 56dvh)" }}>
+        <div className="relative" style={{ height: "min(380px, 50dvh)" }}>
           {/* Vertical dots — always shows BRANDS */}
           <VerticalDots total={brands.length} current={brandIndex} />
 
