@@ -67,13 +67,29 @@ export default function AdminFraudPage() {
               <p className="text-[10px] text-muted">Kullanıcı: {flag.userId}</p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => toast.success("Bayrak çözüldü olarak işaretlendi")}
+                  onClick={() => {
+                    const resolveFraud = useAppStore.getState().resolveFraudFlag;
+                    if (typeof resolveFraud === 'function') {
+                      resolveFraud(flag.id);
+                    }
+                    toast.success("Bayrak çözüldü olarak işaretlendi");
+                  }}
                   className="text-xs px-3 py-1.5 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors"
                 >
                   Çözüldü İşaretle
                 </button>
                 <button
-                  onClick={() => toast("Kullanıcı askıya alındı", { icon: "🚫" })}
+                  onClick={() => {
+                    const suspendUser = useAppStore.getState().suspendUser;
+                    if (typeof suspendUser === 'function') {
+                      suspendUser(flag.userId);
+                    }
+                    const resolveFraud = useAppStore.getState().resolveFraudFlag;
+                    if (typeof resolveFraud === 'function') {
+                      resolveFraud(flag.id);
+                    }
+                    toast("Kullanıcı askıya alındı", { icon: "🚫" });
+                  }}
                   className="text-xs px-3 py-1.5 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors"
                 >
                   Kullanıcıyı Askıya Al

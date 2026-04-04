@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /partner
+Disallow: /sponsor
+Disallow: /api/
+
+Sitemap: https://iyiki.app/sitemap.xml

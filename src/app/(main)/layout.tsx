@@ -39,7 +39,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   if (!mounted || !isAuthenticated || !currentUser) return null;
 
   return (
-    <div className="flex flex-col min-h-screen max-w-lg mx-auto w-full bg-background">
+    <div className="flex flex-col min-h-screen max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto w-full bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 glass">
         <div className="flex items-center justify-between px-5 py-4">
@@ -47,6 +47,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <Link
             href="/notifications"
             className="relative p-2.5 rounded-2xl hover:bg-surface transition-all"
+            aria-label="Bildirimler"
           >
             <Bell className="w-[22px] h-[22px] text-foreground" />
             {unreadCount > 0 && (
@@ -59,7 +60,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto pb-24">
+      <main id="main-content" className="flex-1 overflow-y-auto pb-24">
         {children}
       </main>
 

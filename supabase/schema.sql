@@ -677,3 +677,30 @@ BEGIN
   RETURN QUERY SELECT true, false;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ==========================================
+-- SOCIAL POOL (ASKIDA HEDIYE)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS public.social_pool (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gift_action_id UUID NOT NULL REFERENCES public.gift_actions(id),
+  gift_id UUID NOT NULL REFERENCES public.gifts(id),
+  claimed_by UUID REFERENCES public.users(id),
+  claimed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_social_pool_unclaimed ON public.social_pool(claimed_by) WHERE claimed_by IS NULL;
+CREATE INDEX IF NOT EXISTS idx_social_pool_expires ON public.social_pool(expires_at) WHERE claimed_by IS NULL;
+
+ALTER TABLE public.social_pool ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view unclaimed pool items"
+  ON public.social_pool FOR SELECT
+  USING (claimed_by IS NULL OR claimed_by = auth.uid());
+
+CREATE POLICY "Authenticated users can claim pool items"
+  ON public.social_pool FOR UPDATE
+  USING (claimed_by IS NULL)
+  WITH CHECK (claimed_by = auth.uid());

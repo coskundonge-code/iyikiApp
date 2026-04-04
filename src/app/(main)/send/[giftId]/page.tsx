@@ -115,6 +115,7 @@ export default function SendGiftPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            style={{ opacity: 1 }}
             className="space-y-4"
           >
             <h3 className="font-semibold text-foreground">Kime Ismarlayacaksın?</h3>
@@ -177,6 +178,7 @@ export default function SendGiftPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            style={{ opacity: 1 }}
             className="space-y-4"
           >
             <div className="flex items-center gap-2 p-3 bg-card rounded-xl border border-border">
@@ -249,6 +251,7 @@ export default function SendGiftPage() {
             key="success"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
+            style={{ opacity: 1 }}
             className="text-center py-12"
           >
             <motion.div

@@ -74,7 +74,7 @@ export default function VerifyPage() {
   const verifyCode = (code: string) => {
     setIsVerifying(true);
     setTimeout(() => {
-      if (code === demoOtp || code === "123456") {
+      if (code === demoOtp) {
         if (pendingPhone) {
           login(pendingPhone);
           toast.success("Hoş geldin!");
@@ -102,6 +102,7 @@ export default function VerifyPage() {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
+      style={{ opacity: 1 }}
     >
       {/* Back Button */}
       <button

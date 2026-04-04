@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "react-hot-toast";
+import KVKKBanner from "@/components/KVKKBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -51,6 +52,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="iyi ki" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:text-sm">
+          İçeriğe Atla
+        </a>
         {children}
         <Toaster
           position="top-center"
@@ -65,6 +69,7 @@ export default function RootLayout({
         />
         <PWAInstallPrompt />
         <ServiceWorkerRegistration />
+        <KVKKBanner />
       </body>
     </html>
   );

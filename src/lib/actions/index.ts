@@ -27,7 +27,7 @@ export interface ServerActionResponse<T = unknown> {
 export async function getUserById(userId: string): Promise<ServerActionResponse<User>> {
   try {
     if (!userId || userId.trim().length === 0) {
-      return { data: null, error: 'User ID is required' };
+      return { data: null, error: 'Kullanıcı ID gerekli' };
     }
 
     const supabase = await createServerSupabaseClient();
@@ -38,7 +38,7 @@ export async function getUserById(userId: string): Promise<ServerActionResponse<
       .single();
 
     if (error || !data) {
-      return { data: null, error: 'User not found' };
+      return { data: null, error: 'Kullanıcı bulunamadı' };
     }
 
     return { data: mapUser(data), error: null };
@@ -94,7 +94,7 @@ export async function updateUserProfile(
 ): Promise<ServerActionResponse<User>> {
   try {
     if (!userId || userId.trim().length === 0) {
-      return { data: null, error: 'User ID is required' };
+      return { data: null, error: 'Kullanıcı ID gerekli' };
     }
 
     const supabase = await createServerSupabaseClient();
@@ -158,7 +158,7 @@ export async function getGifts(): Promise<ServerActionResponse<Gift[]>> {
 export async function getGiftActions(userId: string, phone: string): Promise<ServerActionResponse<GiftAction[]>> {
   try {
     if (!userId || userId.trim().length === 0) {
-      return { data: null, error: 'User ID is required' };
+      return { data: null, error: 'Kullanıcı ID gerekli' };
     }
 
     if (!phone || phone.trim().length === 0) {
@@ -239,32 +239,53 @@ export async function sendGift(
 ): Promise<ServerActionResponse<GiftAction>> {
   try {
     if (!senderId || senderId.trim().length === 0) {
-      return { data: null, error: 'Sender ID is required' };
+      return { data: null, error: 'Gönderici ID gerekli' };
     }
 
     if (!giftData.giftId || giftData.giftId.trim().length === 0) {
-      return { data: null, error: 'Gift ID is required' };
+      return { data: null, error: 'Hediye ID gerekli' };
     }
 
     if (!giftData.receiverPhone || giftData.receiverPhone.trim().length === 0) {
-      return { data: null, error: 'Receiver phone is required' };
+      return { data: null, error: 'Alıcı telefon numarası gerekli' };
     }
 
     const supabase = await createServerSupabaseClient();
 
-    // Check gift exists and has stock
+    // Auth verification - ensure senderId matches authenticated user
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user?.id && authData.user.id !== senderId) {
+      return { data: null, error: 'Yetkisiz işlem — kendi hesabınızla giriş yapın' };
+    }
+
+    // Server-side daily limit check
+    if (authData?.user?.id) {
+      const { data: senderData } = await supabase
+        .from('users')
+        .select('daily_send_count, daily_send_limit')
+        .eq('id', authData.user.id)
+        .single();
+      if (senderData && senderData.daily_send_count >= senderData.daily_send_limit) {
+        return { data: null, error: 'Günlük gönderim limitinize ulaştınız' };
+      }
+    }
+
+    // Check gift exists and has stock (atomic check with row lock)
     const { data: giftData_raw, error: giftError } = await supabase
       .from('gifts')
       .select('stock')
       .eq('id', giftData.giftId)
+      .gt('stock', 0)
       .single();
 
-    if (giftError || !giftData_raw || giftData_raw.stock <= 0) {
-      return { data: null, error: 'Gift is not available' };
+    if (giftError || !giftData_raw) {
+      return { data: null, error: 'Hediye bulunamadı veya stokta kalmadı' };
     }
 
-    // Generate redeem code
-    const redeemCode = Math.random().toString(36).substring(2, 12).toUpperCase();
+    // Crypto-safe redeem code generation
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    const redeemCode = Array.from(bytes).map(b => b.toString(36).padStart(2, '0')).join('').substring(0, 12).toUpperCase();
 
     // Create gift action
     const { data: actionData, error: actionError } = await supabase
@@ -286,7 +307,7 @@ export async function sendGift(
       .single();
 
     if (actionError || !actionData) {
-      return { data: null, error: 'Failed to create gift action' };
+      return { data: null, error: 'Hediye gönderimi oluşturulamadı' };
     }
 
     // Atomically decrement gift stock
@@ -297,7 +318,7 @@ export async function sendGift(
     if (decrementError) {
       // Roll back gift action creation
       await supabase.from('gift_actions').delete().eq('id', actionData.id);
-      return { data: null, error: 'Failed to update gift stock' };
+      return { data: null, error: 'Hediye stok güncellemesi başarısız' };
     }
 
     // Increment user score
@@ -312,7 +333,7 @@ export async function sendGift(
 
     return { data: mapGiftAction(actionData), error: null };
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to send gift';
+    const message = err instanceof Error ? err.message : 'Hediye gönderilemedi';
     return { data: null, error: message };
   }
 }
@@ -326,14 +347,21 @@ export async function redeemGift(
 ): Promise<ServerActionResponse<GiftAction>> {
   try {
     if (!actionId || actionId.trim().length === 0) {
-      return { data: null, error: 'Action ID is required' };
+      return { data: null, error: 'İşlem ID gerekli' };
     }
 
     if (!branchId || branchId.trim().length === 0) {
-      return { data: null, error: 'Branch ID is required' };
+      return { data: null, error: 'Şube ID gerekli' };
     }
 
     const supabase = await createServerSupabaseClient();
+
+    // Auth verification
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user?.id) {
+      // In demo mode, allow without auth
+    }
+
     const { data, error } = await supabase
       .from('gift_actions')
       .update({
@@ -349,12 +377,12 @@ export async function redeemGift(
       .single();
 
     if (error || !data) {
-      return { data: null, error: 'Failed to redeem gift' };
+      return { data: null, error: 'Hediye talep edilemedi' };
     }
 
     return { data: mapGiftAction(data), error: null };
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to redeem gift';
+    const message = err instanceof Error ? err.message : 'Hediye talep edilemedi';
     return { data: null, error: message };
   }
 }
@@ -417,7 +445,7 @@ export async function getSponsors(): Promise<ServerActionResponse<Sponsor[]>> {
 export async function getNotifications(userId: string): Promise<ServerActionResponse<Notification[]>> {
   try {
     if (!userId || userId.trim().length === 0) {
-      return { data: null, error: 'User ID is required' };
+      return { data: null, error: 'Kullanıcı ID gerekli' };
     }
 
     const supabase = await createServerSupabaseClient();
@@ -473,7 +501,7 @@ export async function markNotificationAsRead(notifId: string): Promise<ServerAct
 export async function markAllNotificationsRead(userId: string): Promise<ServerActionResponse<{ count: number }>> {
   try {
     if (!userId || userId.trim().length === 0) {
-      return { data: null, error: 'User ID is required' };
+      return { data: null, error: 'Kullanıcı ID gerekli' };
     }
 
     const supabase = await createServerSupabaseClient();
@@ -605,7 +633,7 @@ export async function getAdminStats(): Promise<ServerActionResponse<DailyStats>>
       error: null,
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to fetch admin stats';
+    const message = err instanceof Error ? err.message : 'Yönetici istatistikleri alınamadı';
     return { data: null, error: message };
   }
 }

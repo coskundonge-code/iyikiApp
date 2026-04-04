@@ -22,29 +22,46 @@ export default function DropPage() {
   const currentUser = useAppStore((s) => s.currentUser);
   const sendGift = useAppStore((s) => s.sendGift);
 
+  const today = new Date();
+  const isDropDay = today.getDay() === 4; // Thursday
+  const daysUntilThursday = isDropDay ? 0 : ((4 - today.getDay() + 7) % 7) || 7;
+
   const dropGifts = gifts.filter((g) => g.isActive && g.stock > 0).slice(0, 3);
   const [timeLeft, setTimeLeft] = useState("");
+  const [daysLeft, setDaysLeft] = useState(daysUntilThursday);
   const [claimed, setClaimed] = useState(DROP_DATA.claimedCount);
 
   useEffect(() => {
     const update = () => {
-      const now = new Date();
-      const end = new Date();
-      end.setHours(22, 0, 0, 0);
-      if (now > end) {
-        setTimeLeft("Bugünkü Drop sona erdi");
-        return;
+      if (isDropDay) {
+        const now = new Date();
+        const end = new Date();
+        end.setHours(22, 0, 0, 0);
+        if (now > end) {
+          setTimeLeft("Bugünkü Drop sona erdi");
+          return;
+        }
+        const diff = end.getTime() - now.getTime();
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${hours}s ${String(minutes).padStart(2, "0")}dk ${String(seconds).padStart(2, "0")}sn`);
+      } else {
+        const now = new Date();
+        const nextThursday = new Date();
+        const daysToAdd = (4 - now.getDay() + 7) % 7 || 7;
+        nextThursday.setDate(now.getDate() + daysToAdd);
+        nextThursday.setHours(10, 0, 0, 0);
+
+        const diff = nextThursday.getTime() - now.getTime();
+        const days = Math.ceil(diff / 86400000);
+        setDaysLeft(days);
       }
-      const diff = end.getTime() - now.getTime();
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${hours}s ${String(minutes).padStart(2, "0")}dk ${String(seconds).padStart(2, "0")}sn`);
     };
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isDropDay]);
 
   const handleClaim = (giftId: string) => {
     toast.success("Hediye seçildi! Şimdi birine ısmarla.");
@@ -54,6 +71,40 @@ export default function DropPage() {
 
   const remaining = DROP_DATA.totalStock - claimed;
   const progressPct = Math.round((claimed / DROP_DATA.totalStock) * 100);
+
+  if (!isDropDay) {
+    return (
+      <div className="px-4 py-4 space-y-5">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 text-muted hover:text-foreground text-sm transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Geri
+        </button>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600 rounded-2xl p-6 text-white relative overflow-hidden opacity-75"
+        >
+          <div className="absolute top-0 right-0 opacity-10 text-[120px] -mt-4 -mr-4">⏰</div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-5 h-5" />
+              <span className="text-xs font-bold uppercase tracking-wider opacity-80">Haftalık Drop</span>
+            </div>
+            <h2 className="text-2xl font-bold">Bir sonraki İYİ Kİ Perşembesi'ne</h2>
+            <p className="text-white/80 text-sm mt-1 text-2xl font-bold">{daysLeft} gün</p>
+          </div>
+        </motion.div>
+
+        <div className="bg-card rounded-xl border border-border p-4 text-center">
+          <p className="text-muted text-sm">Drop yalnızca Perşembe günleri sabah 10:00'da açılır.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-4 space-y-5">

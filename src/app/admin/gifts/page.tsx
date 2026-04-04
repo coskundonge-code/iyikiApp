@@ -15,6 +15,10 @@ export default function AdminGiftsPage() {
     return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
   }
 
+  if (gifts.length === 0) {
+    return <div className="p-8 text-center text-muted text-sm">Hediye bulunamadı</div>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border border-border overflow-hidden">

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Verify CRON_SECRET
     const cronSecret = process.env.CRON_SECRET;
-    const providedSecret = request.nextUrl.searchParams.get('secret');
+    const providedSecret = request.headers.get('authorization')?.replace('Bearer ', '') || request.nextUrl.searchParams.get('secret');
 
     if (!cronSecret) {
       console.warn('[Cron] CRON_SECRET not configured');

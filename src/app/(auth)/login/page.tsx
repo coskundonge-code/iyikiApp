@@ -68,6 +68,7 @@ export default function LoginPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
+      style={{ opacity: 1 }}
     >
       {/* Branding */}
       <div className="text-center mb-10">

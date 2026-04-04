@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 
 export default function SponsorCampaignsPage() {
-  const { sponsors, gifts, isLoading, loadAdminData } = useAppStore();
+  const { gifts, isLoading, loadAdminData, currentUser } = useAppStore();
 
   useEffect(() => {
     loadAdminData();
@@ -14,13 +14,11 @@ export default function SponsorCampaignsPage() {
     return <div className="p-8 text-center text-muted text-sm">Yükleniyor...</div>;
   }
 
-  const sponsor = sponsors[0];
-
-  if (!sponsor) {
+  if (!currentUser || currentUser.role !== 'sponsor') {
     return <div className="p-8 text-center text-muted text-sm">Sponsor bulunamadı</div>;
   }
 
-  const sponsoredGifts = gifts.filter((g) => g.sponsorId === sponsor.id);
+  const sponsoredGifts = gifts.filter((g) => g.sponsorId === currentUser.id);
 
   return (
     <div className="space-y-4">
@@ -42,7 +40,7 @@ export default function SponsorCampaignsPage() {
             </div>
             <div className="mt-3 p-2.5 bg-purple-50 rounded-lg">
               <p className="text-xs text-purple-700">
-                Her hediye gönderiminde: "<span className="font-medium">Bu {gift.name.toLowerCase()} {sponsor.name} sponsorluğundadır</span>" gösterilir.
+                Her hediye gönderiminde: "<span className="font-medium">Bu {gift.name.toLowerCase()} sponsorluğundadır</span>" gösterilir.
               </p>
             </div>
           </div>

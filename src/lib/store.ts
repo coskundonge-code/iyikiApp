@@ -99,6 +99,11 @@ interface AppState {
   getReceivedGifts: () => GiftAction[];
   getSentGifts: () => GiftAction[];
   getFilteredGifts: () => Gift[];
+
+  // Admin/Partner Actions
+  addGift: (gift: Omit<Gift, 'id' | 'partnerLogo' | 'expiryHours' | 'isActive' | 'sponsorId' | 'sponsorName'>) => void;
+  resolveFraudFlag: (flagId: string) => void;
+  suspendUser: (userId: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -249,12 +254,14 @@ export const useAppStore = create<AppState>()(
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to load data';
           get().addError('initializeData', message);
-          // Fallback to mock data
-          set({
-            gifts: MOCK_GIFTS,
-            giftActions: MOCK_GIFT_ACTIONS,
-            notifications: MOCK_NOTIFICATIONS,
-            unreadCount: MOCK_NOTIFICATIONS.filter(n => !n.isRead).length,
+          // Fallback to mock data - batch with queueMicrotask
+          queueMicrotask(() => {
+            set({
+              gifts: MOCK_GIFTS,
+              giftActions: MOCK_GIFT_ACTIONS,
+              notifications: MOCK_NOTIFICATIONS,
+              unreadCount: MOCK_NOTIFICATIONS.filter(n => !n.isRead).length,
+            });
           });
         }
         set({ isLoading: false, isInitialized: true });
@@ -333,13 +340,16 @@ export const useAppStore = create<AppState>()(
             getAllGiftActions(),
           ]);
 
-          set({
-            partners: partnersResult.data && partnersResult.data.length > 0 ? partnersResult.data : MOCK_PARTNERS,
-            sponsors: sponsorsResult.data && sponsorsResult.data.length > 0 ? sponsorsResult.data : MOCK_SPONSORS,
-            allUsers: usersResult.data && usersResult.data.length > 0 ? usersResult.data : (MOCK_USERS as User[]),
-            fraudFlags: fraudFlagsResult.data && fraudFlagsResult.data.length > 0 ? fraudFlagsResult.data : MOCK_FRAUD_FLAGS,
-            giftActions: actionsResult.data && actionsResult.data.length > 0 ? actionsResult.data : MOCK_GIFT_ACTIONS,
-            isLoading: false,
+          // Batch updates with queueMicrotask to avoid blocking the main thread
+          queueMicrotask(() => {
+            set({
+              partners: partnersResult.data && partnersResult.data.length > 0 ? partnersResult.data : MOCK_PARTNERS,
+              sponsors: sponsorsResult.data && sponsorsResult.data.length > 0 ? sponsorsResult.data : MOCK_SPONSORS,
+              allUsers: usersResult.data && usersResult.data.length > 0 ? usersResult.data : (MOCK_USERS as User[]),
+              fraudFlags: fraudFlagsResult.data && fraudFlagsResult.data.length > 0 ? fraudFlagsResult.data : MOCK_FRAUD_FLAGS,
+              giftActions: actionsResult.data && actionsResult.data.length > 0 ? actionsResult.data : MOCK_GIFT_ACTIONS,
+              isLoading: false,
+            });
           });
 
           // Log errors if any occurred
@@ -352,13 +362,16 @@ export const useAppStore = create<AppState>()(
           const message = error instanceof Error ? error.message : 'Failed to load admin data';
           get().addError('loadAdminData', message);
           toast.error(message);
-          set({
-            partners: MOCK_PARTNERS,
-            sponsors: MOCK_SPONSORS,
-            allUsers: MOCK_USERS as User[],
-            fraudFlags: MOCK_FRAUD_FLAGS,
-            giftActions: MOCK_GIFT_ACTIONS,
-            isLoading: false,
+          // Wrap fallback data set in queueMicrotask as well
+          queueMicrotask(() => {
+            set({
+              partners: MOCK_PARTNERS,
+              sponsors: MOCK_SPONSORS,
+              allUsers: MOCK_USERS as User[],
+              fraudFlags: MOCK_FRAUD_FLAGS,
+              giftActions: MOCK_GIFT_ACTIONS,
+              isLoading: false,
+            });
           });
         }
       },
@@ -575,6 +588,36 @@ export const useAppStore = create<AppState>()(
           filtered = filtered.filter(g => g.category === state.selectedCategory);
         }
         return filtered;
+      },
+
+      // Admin/Partner Actions
+      addGift: (giftData) => {
+        const newGift: Gift = {
+          id: `gift-${Date.now()}`,
+          ...giftData,
+          partnerLogo: '🏪',
+          expiryHours: 48,
+          isActive: true,
+        };
+        set(state => ({
+          gifts: [newGift, ...state.gifts],
+        }));
+      },
+
+      resolveFraudFlag: (flagId) => {
+        set(state => ({
+          fraudFlags: state.fraudFlags.map(f =>
+            f.id === flagId ? { ...f, resolved: true } : f
+          ),
+        }));
+      },
+
+      suspendUser: (userId) => {
+        set(state => ({
+          allUsers: state.allUsers.map(u =>
+            u.id === userId ? { ...u, status: 'suspended' as const } : u
+          ),
+        }));
       },
     }),
     {
