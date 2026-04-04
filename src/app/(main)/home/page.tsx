@@ -178,6 +178,7 @@ export default function HomePage() {
       >
         {filteredGifts.length > 0 ? (
           <SwipeableCardStack
+            key={selectedCategory || "all"}
             gifts={filteredGifts}
             onSwipeRight={handleSwipeSend}
             disabled={limitReached}
