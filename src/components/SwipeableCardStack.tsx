@@ -699,7 +699,7 @@ export default function SwipeableCardStack({
 
       {/* ── CARD STACK AREA ── */}
       <div className="relative w-full" style={{ maxWidth: "340px", margin: "0 auto" }}>
-        <div className="relative" style={{ height: "min(320px, 45dvh)" }}>
+        <div className="relative" style={{ height: "min(400px, 56dvh)" }}>
           {/* Vertical dots — always shows BRANDS */}
           <VerticalDots total={brands.length} current={brandIndex} />
 
@@ -791,38 +791,6 @@ export default function SwipeableCardStack({
         )}
       </div>
 
-      {/* ── ACTION BUTTONS — sadece marka seviyesinde ── */}
-      {level === "brands" && (
-        <>
-          <div className="flex items-center justify-center gap-5 mt-3">
-            <button
-              onClick={handleBrandSwipeLeft}
-              className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
-            >
-              <GiftIcon className="w-5 h-5 text-teal-400" />
-            </button>
-
-            <button
-              onClick={() => handleBrandSwipeRight(brandIndex)}
-              className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-transform active:scale-90"
-            >
-              <GiftIcon className="w-7 h-7 text-white" />
-            </button>
-
-            <button
-              onClick={() => handleBrandSwipeRight(brandIndex)}
-              className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
-            >
-              <GiftIcon className="w-5 h-5 text-teal-400" />
-            </button>
-          </div>
-          <div className="flex items-center justify-center gap-8 mt-2.5">
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Urunler</span>
-            <span className="text-[11px] text-muted/50 font-bold w-[72px] text-center">Kesfet</span>
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Urunler</span>
-          </div>
-        </>
-      )}
     </div>
   );
 }

@@ -118,7 +118,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="px-5 pt-4 pb-8 space-y-5">
+    <div className="px-5 pt-4 pb-8 space-y-6">
       {/* Welcome — Compact */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -192,12 +192,12 @@ export default function HomePage() {
         )}
       </motion.div>
 
-      {/* Quick Actions — Row */}
+      {/* Quick Actions — Row (2nd screen when scrolling) */}
       <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-3 gap-3"
+        className="grid grid-cols-3 gap-3 pt-6"
       >
         {QUICK_ACTIONS.map((item) => (
           <Link key={item.href} href={item.href}>
