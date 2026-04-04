@@ -7,38 +7,39 @@ import { Sparkles, ChevronRight, Heart, ArrowUpRight, ArrowDownLeft, Zap, Trophy
 import Link from "next/link";
 import { useAppStore } from "@/lib/store";
 import { cn, formatRelativeTime, getStatusLabel, getStatusColor } from "@/lib/utils";
-import { CATEGORIES, GiftCategory, Gift, GiftAction } from "@/types";
+import { CATEGORIES, Gift, GiftAction } from "@/types";
 
-const CARD_GRADIENTS: Record<string, string> = {
-  coffee: "from-amber-50 to-orange-50",
-  chocolate: "from-rose-50 to-pink-50",
-  book: "from-blue-50 to-indigo-50",
-  flower: "from-pink-50 to-rose-50",
-  experience: "from-violet-50 to-purple-50",
-  food: "from-emerald-50 to-teal-50",
+const CARD_COLORS: Record<string, { bg: string; accent: string }> = {
+  coffee: { bg: "from-amber-50 via-orange-50 to-yellow-50", accent: "from-amber-100 to-orange-100" },
+  chocolate: { bg: "from-rose-50 via-pink-50 to-red-50", accent: "from-rose-100 to-pink-100" },
+  book: { bg: "from-sky-50 via-blue-50 to-indigo-50", accent: "from-sky-100 to-blue-100" },
+  flower: { bg: "from-pink-50 via-rose-50 to-fuchsia-50", accent: "from-pink-100 to-rose-100" },
+  experience: { bg: "from-violet-50 via-purple-50 to-indigo-50", accent: "from-violet-100 to-purple-100" },
+  food: { bg: "from-emerald-50 via-teal-50 to-cyan-50", accent: "from-emerald-100 to-teal-100" },
 };
 
-function GiftCard({ gift, onClick }: { gift: Gift; onClick: () => void }) {
-  const gradient = CARD_GRADIENTS[gift.category] || "from-gray-50 to-slate-50";
-
+function GiftCard({ gift, onClick, index }: { gift: Gift; onClick: () => void; index: number }) {
+  const colors = CARD_COLORS[gift.category] || CARD_COLORS.coffee;
   return (
     <motion.button
-      whileHover={{ y: -6, scale: 1.02 }}
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.08, duration: 0.5 }}
+      whileHover={{ y: -8, scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="flex-shrink-0 w-44 bg-white rounded-3xl text-left overflow-hidden"
-      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04)" }}
+      className="gift-card-premium flex-shrink-0 w-[11rem] text-left"
     >
-      <div className={cn("bg-gradient-to-br p-6 flex items-center justify-center", gradient)}>
-        <span className="text-6xl drop-shadow-sm">{gift.image}</span>
+      <div className={cn("bg-gradient-to-br p-8 flex items-center justify-center min-h-[140px]", colors.bg)}>
+        <span className="text-7xl drop-shadow-sm">{gift.image}</span>
       </div>
-      <div className="p-4">
-        <h3 className="font-bold text-[15px] text-foreground leading-tight">{gift.name}</h3>
-        <p className="text-xs text-muted mt-1">{gift.partnerName}</p>
+      <div className="p-4 pb-5">
+        <h3 className="font-bold text-[15px] text-foreground leading-snug">{gift.name}</h3>
+        <p className="text-[13px] text-muted mt-1 font-medium">{gift.partnerName}</p>
         {gift.sponsorName && (
-          <div className="mt-2.5 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-primary/40" />
-            <p className="text-[10px] text-muted/70 truncate">
+          <div className="mt-3 flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-secondary" />
+            <p className="text-[11px] text-muted/70 font-medium truncate">
               {gift.sponsorName} sponsorluğunda
             </p>
           </div>
@@ -50,46 +51,42 @@ function GiftCard({ gift, onClick }: { gift: Gift; onClick: () => void }) {
 
 function ActionItem({ action, isSent }: { action: GiftAction; isSent: boolean }) {
   const router = useRouter();
-
   return (
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={() => {
-        if (!isSent && action.status === "pending") {
-          router.push(`/redeem/${action.id}`);
-        }
+        if (!isSent && action.status === "pending") router.push(`/redeem/${action.id}`);
       }}
-      className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl text-left transition-all hover:shadow-md"
-      style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
+      className="w-full flex items-center gap-4 p-4 premium-card text-left group"
     >
-      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-surface to-border flex items-center justify-center text-2xl flex-shrink-0">
         {action.gift.image}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {isSent ? (
             <ArrowUpRight className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
           ) : (
             <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
           )}
-          <span className="text-sm font-semibold text-foreground truncate">
+          <span className="text-[14px] font-semibold text-foreground truncate">
             {isSent
               ? `${action.receiverName || "Bilinmeyen"}'e ${action.gift.name}`
               : `${action.senderName}'den ${action.gift.name}`}
           </span>
         </div>
         {action.note && (
-          <p className="text-xs text-muted mt-0.5 truncate italic">&ldquo;{action.note}&rdquo;</p>
+          <p className="text-[13px] text-muted mt-1 truncate italic">&ldquo;{action.note}&rdquo;</p>
         )}
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-semibold", getStatusColor(action.status))}>
+        <div className="flex items-center gap-2.5 mt-2">
+          <span className={cn("text-[11px] px-2.5 py-1 rounded-full font-semibold", getStatusColor(action.status))}>
             {getStatusLabel(action.status)}
           </span>
-          <span className="text-[10px] text-muted">{formatRelativeTime(action.createdAt)}</span>
+          <span className="text-[11px] text-muted font-medium">{formatRelativeTime(action.createdAt)}</span>
         </div>
       </div>
       {!isSent && action.status === "pending" && (
-        <ChevronRight className="w-4 h-4 text-muted flex-shrink-0" />
+        <ChevronRight className="w-5 h-5 text-muted/40 group-hover:text-primary transition-colors flex-shrink-0" />
       )}
     </motion.button>
   );
@@ -98,19 +95,15 @@ function ActionItem({ action, isSent }: { action: GiftAction; isSent: boolean })
 export default function HomePage() {
   const router = useRouter();
   const currentUser = useAppStore((s) => s.currentUser);
-  const gifts = useAppStore((s) => s.gifts);
   const giftActions = useAppStore((s) => s.giftActions);
   const selectedCategory = useAppStore((s) => s.selectedCategory);
   const setSelectedCategory = useAppStore((s) => s.setSelectedCategory);
   const getFilteredGifts = useAppStore((s) => s.getFilteredGifts);
-
   const isInitialized = useAppStore((s) => s.isInitialized);
   const initializeData = useAppStore((s) => s.initializeData);
 
   useEffect(() => {
-    if (!isInitialized) {
-      initializeData();
-    }
+    if (!isInitialized) initializeData();
   }, [isInitialized, initializeData]);
 
   const filteredGifts = getFilteredGifts();
@@ -118,215 +111,211 @@ export default function HomePage() {
   const myActions = giftActions.filter(
     (a) => a.senderId === currentUser?.id || a.receiverPhone === currentUser?.phone || a.receiverId === currentUser?.id
   );
-
   const sentActions = myActions.filter((a) => a.senderId === currentUser?.id);
   const receivedActions = myActions.filter(
     (a) => a.receiverPhone === currentUser?.phone || a.receiverId === currentUser?.id
   );
-
   const askidaCount = giftActions.filter((a) => a.status === "social_pool" || a.status === "distributed").length;
 
   return (
-    <div className="px-5 py-6 space-y-8">
+    <div className="px-5 pt-6 pb-8 space-y-10">
       {/* Greeting */}
-      <div className="bg-gradient-to-br from-white to-rose-50/50 rounded-3xl p-6" style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.03)" }}>
-        <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
-          Merhaba, {currentUser?.name || "Misafir"} 👋
-        </h2>
-        <div className="flex items-center gap-2 mt-2">
-          <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="premium-card p-7"
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[13px] text-muted font-medium uppercase tracking-widest mb-1">Hoş geldin</p>
+            <h2 className="text-[28px] font-extrabold text-foreground tracking-tight leading-tight">
+              {currentUser?.name || "Misafir"} 👋
+            </h2>
+          </div>
+          <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2 rounded-2xl border border-amber-100/60">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-semibold text-amber-700">
-              {currentUser?.iyikiScore || 0} puan
+            <span className="text-sm font-bold text-amber-700">{currentUser?.iyikiScore || 0}</span>
+          </div>
+        </div>
+        {currentUser?.tier === "premium" && (
+          <div className="mt-3">
+            <span className="text-[11px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full font-bold tracking-wide">
+              PREMIUM ÜYE
             </span>
           </div>
-          {currentUser?.tier === "premium" && (
-            <span className="text-[11px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full font-bold shadow-sm">
-              PRO
-            </span>
-          )}
-        </div>
-      </div>
+        )}
+      </motion.div>
 
-      {/* Weekly Drop Banner */}
+      {/* Weekly Drop */}
       <Link href="/drop">
         <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
-          className="bg-gradient-to-r from-orange-500 via-rose-500 to-pink-600 rounded-3xl p-5 text-white relative overflow-hidden cursor-pointer"
-          style={{ boxShadow: "0 8px 30px rgba(225, 29, 72, 0.25)" }}
+          className="relative rounded-3xl p-6 text-white overflow-hidden cursor-pointer glow-primary"
+          style={{ background: "linear-gradient(135deg, #E8364F 0%, #FF6B8A 50%, #F5A623 100%)" }}
         >
-          <div className="absolute -top-4 -right-4 opacity-[0.08] text-[120px] rotate-12">⚡</div>
+          <div className="absolute -top-6 -right-6 text-[140px] opacity-[0.06] rotate-12 select-none">⚡</div>
           <div className="relative z-10 flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-1.5 mb-1">
+              <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-4 h-4" />
-                <span className="text-[11px] font-bold uppercase tracking-widest opacity-90">Haftalik Drop</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.15em] opacity-90">Haftalık Drop</span>
               </div>
-              <h3 className="font-extrabold text-lg">iyi ki Persembesi</h3>
-              <p className="text-white/80 text-sm mt-1">Sinirli sayida jest, acele et!</p>
+              <h3 className="font-extrabold text-xl leading-tight">İYİ Kİ Perşembesi</h3>
+              <p className="text-white/80 text-[13px] mt-1.5 font-medium">Sınırlı sayıda jest, acele et!</p>
             </div>
-            <div className="bg-white/20 rounded-2xl px-4 py-3 backdrop-blur-sm text-center min-w-[64px]">
-              <p className="text-lg font-extrabold">27</p>
-              <p className="text-[10px] font-medium opacity-80">kaldi</p>
+            <div className="bg-white/20 rounded-2xl px-5 py-3 backdrop-blur-sm text-center min-w-[72px]">
+              <p className="text-2xl font-extrabold leading-none">27</p>
+              <p className="text-[10px] font-semibold opacity-80 mt-1">kaldı</p>
             </div>
           </div>
         </motion.div>
       </Link>
 
       {/* Categories */}
-      <div className="flex gap-2.5 overflow-x-auto hide-scrollbar -mx-5 px-5 py-1">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5 py-1"
+      >
         <button
           onClick={() => setSelectedCategory(null)}
           className={cn(
-            "flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap",
+            "flex-shrink-0 px-5 py-2.5 rounded-2xl text-[13px] font-bold transition-all whitespace-nowrap",
             !selectedCategory
-              ? "bg-foreground text-background shadow-md"
-              : "bg-white border border-gray-200 text-muted hover:text-foreground hover:border-gray-300"
+              ? "bg-foreground text-white shadow-lg"
+              : "bg-white border border-border text-muted hover:text-foreground hover:border-foreground/20"
           )}
         >
-          Hepsi
+          Tümü
         </button>
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
             className={cn(
-              "flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap",
+              "flex-shrink-0 px-5 py-2.5 rounded-2xl text-[13px] font-bold transition-all whitespace-nowrap",
               selectedCategory === cat.id
-                ? "bg-foreground text-background shadow-md"
-                : "bg-white border border-gray-200 text-muted hover:text-foreground hover:border-gray-300"
+                ? "bg-foreground text-white shadow-lg"
+                : "bg-white border border-border text-muted hover:text-foreground hover:border-foreground/20"
             )}
           >
             {cat.emoji} {cat.name}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Gift Cards */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-foreground">Bugun Ne Ismarlayalim?</h3>
-        </div>
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-2">
+        <h3 className="text-xl font-extrabold text-foreground mb-5 tracking-tight">
+          Bugün Ne Ismarlayalım? ☕
+        </h3>
+        <div className="flex gap-5 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-4">
           <AnimatePresence mode="popLayout">
             {filteredGifts.map((gift, i) => (
-              <motion.div
+              <GiftCard
                 key={gift.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: i * 0.06 }}
-                layout
-              >
-                <GiftCard
-                  gift={gift}
-                  onClick={() => router.push(`/send/${gift.id}`)}
-                />
-              </motion.div>
+                gift={gift}
+                index={i}
+                onClick={() => router.push(`/send/${gift.id}`)}
+              />
             ))}
           </AnimatePresence>
           {filteredGifts.length === 0 && (
-            <div className="flex items-center justify-center w-full py-12">
-              <p className="text-sm text-muted">Bu kategoride su an hediye yok</p>
+            <div className="flex items-center justify-center w-full py-16">
+              <p className="text-[14px] text-muted font-medium">Bu kategoride şu an hediye yok</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Askida Barometer */}
+      {/* Askida */}
       {askidaCount > 0 && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 rounded-3xl p-5 border border-purple-100/50"
-          style={{ boxShadow: "0 2px 12px rgba(168, 85, 247, 0.08)" }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl p-6 border border-purple-100/60"
+          style={{ background: "linear-gradient(135deg, #F5F0FF 0%, #FFF0F5 50%, #FFF5F5 100%)" }}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-100 flex items-center justify-center">
-              <Heart className="w-5 h-5 text-purple-500" />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+              <Heart className="w-6 h-6 text-purple-500" />
             </div>
             <div>
-              <span className="text-sm font-bold text-purple-900">Askida Jest</span>
-              <p className="text-xs text-purple-600 mt-0.5">
-                Topluluk olarak <span className="font-bold">{askidaCount}</span> jest askiya dustu ve birilerini mutlu etti
+              <h4 className="text-[15px] font-bold text-purple-900">Askıda Jest</h4>
+              <p className="text-[13px] text-purple-600 mt-0.5 font-medium">
+                Topluluk olarak <span className="font-extrabold">{askidaCount}</span> jest askıya düştü
               </p>
             </div>
           </div>
         </motion.div>
       )}
 
-      {/* Quick Access: Achievements + Community */}
+      {/* Quick Access */}
       <div className="grid grid-cols-2 gap-4">
         <Link href="/achievements">
-          <motion.div
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 rounded-2xl border border-amber-100/60 p-5 cursor-pointer h-full"
-            style={{ boxShadow: "0 2px 12px rgba(245, 158, 11, 0.08)" }}
+          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+            className="premium-card p-5 cursor-pointer h-full"
           >
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center mb-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-50 flex items-center justify-center mb-3">
               <Trophy className="w-5 h-5 text-amber-600" />
             </div>
-            <h4 className="text-sm font-bold text-foreground">Basarimlar</h4>
-            <p className="text-xs text-muted mt-1">
+            <h4 className="text-[14px] font-bold text-foreground">Başarımlar</h4>
+            <p className="text-[12px] text-muted mt-1 font-medium">
               {sentActions.length >= 1 ? "1" : "0"}/12 rozet
             </p>
           </motion.div>
         </Link>
         <Link href="/community">
-          <motion.div
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            className="bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-50 rounded-2xl border border-indigo-100/60 p-5 cursor-pointer h-full"
-            style={{ boxShadow: "0 2px 12px rgba(99, 102, 241, 0.08)" }}
+          <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.97 }}
+            className="premium-card p-5 cursor-pointer h-full"
           >
-            <div className="w-10 h-10 rounded-2xl bg-indigo-100 flex items-center justify-center mb-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center mb-3">
               <UsersIcon className="w-5 h-5 text-indigo-600" />
             </div>
-            <h4 className="text-sm font-bold text-foreground">Topluluklar</h4>
-            <p className="text-xs text-muted mt-1">4 aktif topluluk</p>
+            <h4 className="text-[14px] font-bold text-foreground">Topluluklar</h4>
+            <p className="text-[12px] text-muted mt-1 font-medium">4 aktif topluluk</p>
           </motion.div>
         </Link>
       </div>
 
-      {/* Recent Actions */}
+      {/* Recent */}
       {myActions.length > 0 && (
         <div>
-          <h3 className="text-lg font-bold text-foreground mb-4">Son Jestlerin</h3>
+          <h3 className="text-xl font-extrabold text-foreground mb-5 tracking-tight">Son Jestlerin</h3>
           <div className="space-y-3">
             {[
               ...receivedActions.filter((a) => a.status === "pending"),
               ...sentActions,
               ...receivedActions.filter((a) => a.status !== "pending"),
-            ]
-              .slice(0, 6)
-              .map((action) => (
-                <ActionItem
-                  key={action.id}
-                  action={action}
-                  isSent={action.senderId === currentUser?.id}
-                />
-              ))}
+            ].slice(0, 6).map((action) => (
+              <ActionItem key={action.id} action={action} isSent={action.senderId === currentUser?.id} />
+            ))}
           </div>
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty */}
       {myActions.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-3xl" style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.03)" }}>
-          <div className="text-6xl mb-4">🎁</div>
-          <h3 className="text-lg font-bold text-foreground mb-1">Henuz bir jestin yok</h3>
-          <p className="text-sm text-muted mb-6">
-            Ilk jestini yaparak basla!
-          </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16 premium-card"
+        >
+          <div className="text-7xl mb-5 animate-float">🎁</div>
+          <h3 className="text-xl font-extrabold text-foreground mb-2">Henüz bir jestin yok</h3>
+          <p className="text-[14px] text-muted mb-8 font-medium">İlk jestini yaparak başla!</p>
           <button
             onClick={() => router.push("/send")}
-            className="px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-2xl hover:shadow-lg transition-all"
+            className="px-8 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-2xl shadow-lg transition-all hover:shadow-xl text-[15px]"
           >
-            Hediye Gonder
+            Hediye Gönder
           </button>
-        </div>
+        </motion.div>
       )}
     </div>
   );

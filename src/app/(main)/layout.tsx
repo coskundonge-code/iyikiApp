@@ -19,7 +19,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const currentUser = useAppStore((s) => s.currentUser);
   const unreadCount = useAppStore((s) => s.unreadCount);
-
   const initializeData = useAppStore((s) => s.initializeData);
   const isInitialized = useAppStore((s) => s.isInitialized);
 
@@ -36,18 +35,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex flex-col min-h-screen max-w-lg mx-auto w-full bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+      <header className="sticky top-0 z-40 glass">
         <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight gradient-text">iyi ki</h1>
-          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight gradient-text">iyi ki</h1>
           <Link
             href="/notifications"
-            className="relative p-2.5 rounded-2xl hover:bg-gray-50 transition-all"
+            className="relative p-2.5 rounded-2xl hover:bg-surface transition-all"
           >
-            <Bell className="w-5 h-5 text-foreground" />
+            <Bell className="w-[22px] h-[22px] text-foreground" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse-dot">
+              <span className="absolute top-1.5 right-1.5 w-4.5 h-4.5 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse-dot shadow-sm">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -55,14 +52,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-20">
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto pb-24">
         {children}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100 safe-bottom">
-        <div className="max-w-lg mx-auto flex items-center justify-around py-3">
+      {/* Bottom Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass safe-bottom">
+        <div className="max-w-lg mx-auto flex items-center justify-around py-3 px-2">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -70,14 +67,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors",
+                  "flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition-all",
                   isActive
-                    ? "text-primary"
+                    ? "text-primary bg-primary/5"
                     : "text-muted hover:text-foreground"
                 )}
               >
                 <item.icon className={cn("w-[22px] h-[22px]", isActive && "stroke-[2.5px]")} />
-                <span className="text-[11px] font-semibold mt-0.5">{item.label}</span>
+                <span className={cn("text-[11px] font-semibold", isActive && "font-bold")}>{item.label}</span>
               </Link>
             );
           })}
