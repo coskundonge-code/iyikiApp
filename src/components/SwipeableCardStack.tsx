@@ -283,8 +283,7 @@ function BrandContent({ brand }: { brand: Brand }) {
         </span>
       </div>
       <div className="flex items-center gap-1 mt-6 text-white/40 text-[13px]">
-        <span>Saga kaydir</span>
-        <ChevronRight className="w-3.5 h-3.5" />
+        <span>← Kaydir →</span>
         <span>urunleri kesfet</span>
       </div>
     </CardShell>
@@ -607,6 +606,7 @@ export default function SwipeableCardStack({
      ═══════════════════════════════════════════════════════════════ */
 
   // -- BRANDS --
+  // Saga veya sola kaydir = o markanin urunlerine gir
   const handleBrandSwipeRight = useCallback(
     (idx: number) => {
       const brand = brands[idx];
@@ -616,9 +616,10 @@ export default function SwipeableCardStack({
   );
 
   const handleBrandSwipeLeft = useCallback(() => {
-    // Sola kaydir — marka degistirme! Marka gecisi sadece dikey swipe ile olur.
-    // Kart snap-back yapacak (hicbir sey yapma).
-  }, []);
+    // Sola kaydir = ayni marka, urunlere gir
+    const brand = brands[brandIndex];
+    if (brand) enterBrand(brand);
+  }, [brands, brandIndex, enterBrand]);
 
   // -- PRODUCTS --
   const handleProductSwipeRight = useCallback(() => {
@@ -712,12 +713,12 @@ export default function SwipeableCardStack({
                     key={`bt-${visibleBrands[0].id}-${brandIndex}`}
                     onSwipeRight={() => handleBrandSwipeRight(brandIndex)}
                     onSwipeLeft={handleBrandSwipeLeft}
-                    rightLabel="KESFET"
-                    leftLabel="GEC"
-                    rightIcon={Store}
-                    leftIcon={X}
+                    rightLabel="URUNLER"
+                    leftLabel="URUNLER"
+                    rightIcon={GiftIcon}
+                    leftIcon={GiftIcon}
                     rightColor="teal"
-                    leftColor="red"
+                    leftColor="teal"
                   >
                     <BrandContent brand={visibleBrands[0]} />
                   </TinderCard>
@@ -808,20 +809,23 @@ export default function SwipeableCardStack({
           <>
             <button
               onClick={() => triggerButtonSwipe("left")}
-              className="w-14 h-14 rounded-full bg-white border-2 border-red-200 flex items-center justify-center shadow-lg shadow-red-100/50 transition-transform active:scale-90"
+              className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
             >
-              <X className="w-5 h-5 text-red-400" />
+              <GiftIcon className="w-5 h-5 text-teal-400" />
             </button>
 
             <button
               onClick={() => triggerButtonSwipe("right")}
               className="w-[72px] h-[72px] rounded-full flex items-center justify-center shadow-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-emerald-300/30 hover:shadow-emerald-300/50 transition-transform active:scale-90"
             >
-              <Store className="w-7 h-7 text-white" />
+              <GiftIcon className="w-7 h-7 text-white" />
             </button>
 
-            <button className="w-14 h-14 rounded-full bg-white border-2 border-purple-200 flex items-center justify-center shadow-lg shadow-purple-100/50 transition-transform active:scale-90">
-              <Heart className="w-5 h-5 text-purple-400" />
+            <button
+              onClick={() => triggerButtonSwipe("right")}
+              className="w-14 h-14 rounded-full bg-white border-2 border-teal-200 flex items-center justify-center shadow-lg shadow-teal-100/50 transition-transform active:scale-90"
+            >
+              <GiftIcon className="w-5 h-5 text-teal-400" />
             </button>
           </>
         )}
@@ -837,9 +841,9 @@ export default function SwipeableCardStack({
           </>
         ) : (
           <>
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Gec</span>
+            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Urunler</span>
             <span className="text-[11px] text-muted/50 font-bold w-[72px] text-center">Kesfet</span>
-            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Favori</span>
+            <span className="text-[11px] text-muted/40 font-semibold w-14 text-center">Urunler</span>
           </>
         )}
       </div>
