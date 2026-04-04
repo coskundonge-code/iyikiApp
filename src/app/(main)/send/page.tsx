@@ -19,8 +19,8 @@ export default function SendPage() {
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-foreground">Hediye Gönder</h2>
-        <p className="text-sm text-muted mt-1">
+        <h2 className="text-2xl font-extrabold text-foreground">Hediye Gonder</h2>
+        <p className="text-sm text-muted mt-2">
           Bugün kalan hakkın:{" "}
           <span className="font-semibold text-foreground">
             {Math.max(0, (currentUser?.dailySendLimit ?? 1) - (currentUser?.dailySendCount ?? 0))}
@@ -75,7 +75,7 @@ export default function SendPage() {
       </div>
 
       {/* Gift Grid */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         {filteredGifts.map((gift, i) => (
           <motion.button
             key={gift.id}
@@ -86,12 +86,13 @@ export default function SendPage() {
             onClick={() => !limitReached && router.push(`/send/${gift.id}`)}
             disabled={limitReached}
             className={cn(
-              "gift-card bg-card rounded-2xl border border-border p-4 text-left",
-              limitReached && "opacity-50 cursor-not-allowed"
+              "bg-white rounded-3xl p-5 text-left transition-all",
+              limitReached ? "opacity-50 cursor-not-allowed" : "hover:shadow-lg"
             )}
+            style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
           >
-            <div className="text-4xl mb-3">{gift.image}</div>
-            <h3 className="font-semibold text-sm text-foreground">{gift.name}</h3>
+            <div className="text-5xl mb-4">{gift.image}</div>
+            <h3 className="font-bold text-base text-foreground">{gift.name}</h3>
             <p className="text-xs text-muted mt-0.5">{gift.partnerName}</p>
             {gift.isPremium && (
               <span className="inline-block mt-2 text-[9px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-full font-bold">

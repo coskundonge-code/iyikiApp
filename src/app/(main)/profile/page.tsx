@@ -46,11 +46,11 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <div className="px-5 py-6 space-y-5">
       {/* Profile Card */}
-      <div className="bg-card rounded-2xl border border-border p-5">
+      <div className="bg-white rounded-3xl shadow-lg shadow-gray-100/50 border border-gray-50 p-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-sm">
+          <div className="w-20 h-20 bg-gradient-to-br from-rose-400 via-pink-500 to-rose-500 rounded-3xl flex items-center justify-center text-white text-2xl font-extrabold shadow-lg shadow-rose-200/40">
             {getInitials(currentUser.name)}
           </div>
           <div className="flex-1">
@@ -92,7 +92,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
+        <div className="grid grid-cols-3 gap-3 mt-5">
           <div className="bg-blue-50 rounded-xl p-3 text-center">
             <ArrowUpRight className="w-4 h-4 text-blue-500 mx-auto mb-1" />
             <p className="text-lg font-bold text-foreground">{sentGifts.length}</p>
@@ -203,9 +203,9 @@ export default function ProfilePage() {
       </div>
 
       {/* Settings */}
-      <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
         <Link href="/achievements"
-          className="w-full flex items-center justify-between p-4 hover:bg-card-hover transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-all"
         >
           <div className="flex items-center gap-3">
             <Trophy className="w-5 h-5 text-amber-500" />
@@ -214,7 +214,7 @@ export default function ProfilePage() {
           <ChevronRight className="w-4 h-4 text-muted" />
         </Link>
         <Link href="/community"
-          className="w-full flex items-center justify-between p-4 hover:bg-card-hover transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-all"
         >
           <div className="flex items-center gap-3">
             <UsersIcon className="w-5 h-5 text-indigo-500" />
@@ -224,7 +224,7 @@ export default function ProfilePage() {
         </Link>
         <button
           onClick={() => router.push("/premium")}
-          className="w-full flex items-center justify-between p-4 hover:bg-card-hover transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-all"
         >
           <div className="flex items-center gap-3">
             <Star className="w-5 h-5 text-amber-500" />
@@ -234,7 +234,7 @@ export default function ProfilePage() {
         </button>
         <button
           onClick={() => router.push("/notifications")}
-          className="w-full flex items-center justify-between p-4 hover:bg-card-hover transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-all"
         >
           <div className="flex items-center gap-3">
             <Bell className="w-5 h-5 text-blue-500" />
@@ -244,7 +244,7 @@ export default function ProfilePage() {
         </button>
         <button
           onClick={() => toast("Gizlilik Politikası sayfası yakında", { icon: "📋" })}
-          className="w-full flex items-center justify-between p-4 hover:bg-card-hover transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-all"
         >
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 text-green-500" />

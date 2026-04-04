@@ -59,27 +59,27 @@ export default function LoginPage() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-          className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-rose-500 to-pink-600 rounded-3xl mb-4 shadow-lg"
+          className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-rose-500 via-pink-500 to-rose-600 rounded-[28px] mb-5 shadow-xl shadow-rose-200/50"
         >
-          <Gift className="w-10 h-10 text-white" />
+          <Gift className="w-12 h-12 text-white" />
         </motion.div>
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+        <h1 className="text-4xl font-extrabold text-foreground tracking-tight">
           iyi ki
         </h1>
-        <p className="text-muted mt-2 text-sm">
+        <p className="text-muted mt-3 text-base leading-relaxed max-w-xs mx-auto">
           Biri seni düşünsün. Söylemene gerek yok, düşünmen yeter.
         </p>
       </div>
 
       {/* Login Card */}
-      <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
+      <div className="bg-white rounded-3xl shadow-xl shadow-gray-100/50 border border-gray-100 p-7">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Telefon Numaran
             </label>
             <div className="flex items-center gap-2">
-              <div className="flex items-center px-3 py-3 bg-gray-50 rounded-xl border border-border text-sm text-muted font-medium">
+              <div className="flex items-center px-4 py-3.5 bg-gray-50 rounded-2xl border border-gray-200 text-sm text-muted font-semibold">
                 <Phone className="w-4 h-4 mr-1.5" />
                 +90
               </div>
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 value={phone}
                 onChange={(e) => setPhoneInput(e.target.value.replace(/[^0-9\s]/g, ""))}
                 placeholder="5XX XXX XX XX"
-                className="flex-1 px-4 py-3 bg-gray-50 rounded-xl border border-border text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-base"
+                className="flex-1 px-4 py-3.5 bg-gray-50 rounded-2xl border border-gray-200 text-foreground placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-base"
                 maxLength={13}
                 autoFocus
               />
@@ -98,7 +98,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading || phone.replace(/\s/g, "").length < 10}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl hover:from-rose-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-bold rounded-2xl hover:from-rose-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-rose-200/40 text-base"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -122,28 +122,28 @@ export default function LoginPage() {
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => handleQuickLogin("user")}
-            className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-foreground transition-colors"
+            className="flex items-center gap-2.5 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-2xl text-sm font-semibold text-foreground transition-all hover:shadow-sm"
           >
             <Users className="w-4 h-4 text-blue-500" />
             Kullanıcı
           </button>
           <button
             onClick={() => handleQuickLogin("admin")}
-            className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-foreground transition-colors"
+            className="flex items-center gap-2.5 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-2xl text-sm font-semibold text-foreground transition-all hover:shadow-sm"
           >
             <Shield className="w-4 h-4 text-red-500" />
             Admin
           </button>
           <button
             onClick={() => handleQuickLogin("partner")}
-            className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-foreground transition-colors"
+            className="flex items-center gap-2.5 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-2xl text-sm font-semibold text-foreground transition-all hover:shadow-sm"
           >
             <Building2 className="w-4 h-4 text-green-500" />
             Partner
           </button>
           <button
             onClick={() => handleQuickLogin("sponsor")}
-            className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-foreground transition-colors"
+            className="flex items-center gap-2.5 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-2xl text-sm font-semibold text-foreground transition-all hover:shadow-sm"
           >
             <Heart className="w-4 h-4 text-purple-500" />
             Sponsor

@@ -36,14 +36,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex flex-col min-h-screen max-w-lg mx-auto w-full bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4">
           <div>
-            <h1 className="text-lg font-bold tracking-tight gradient-text">iyi ki</h1>
+            <h1 className="text-xl font-extrabold tracking-tight gradient-text">iyi ki</h1>
           </div>
           <Link
             href="/notifications"
-            className="relative p-2 rounded-xl hover:bg-card-hover transition-colors"
+            className="relative p-2.5 rounded-2xl hover:bg-gray-50 transition-all"
           >
             <Bell className="w-5 h-5 text-foreground" />
             {unreadCount > 0 && (
@@ -61,8 +61,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-lg border-t border-border safe-bottom">
-        <div className="max-w-lg mx-auto flex items-center justify-around py-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100 safe-bottom">
+        <div className="max-w-lg mx-auto flex items-center justify-around py-3">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -76,8 +76,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     : "text-muted hover:text-foreground"
                 )}
               >
-                <item.icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <item.icon className={cn("w-[22px] h-[22px]", isActive && "stroke-[2.5px]")} />
+                <span className="text-[11px] font-semibold mt-0.5">{item.label}</span>
               </Link>
             );
           })}
