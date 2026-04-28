@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "git-commit",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/Coşkun Dönge/iyikiApp/git-commit-helper.js"],
+      "port": 9999
+    }
+  ]
+}

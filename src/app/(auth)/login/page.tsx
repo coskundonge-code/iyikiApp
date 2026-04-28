@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 const DEMO_ROLES = [
-  { role: "user", label: "Kullanici", icon: Users, gradient: "from-blue-500 to-cyan-500", bg: "bg-blue-50", ring: "ring-blue-100" },
-  { role: "admin", label: "Admin", icon: Shield, gradient: "from-rose-500 to-red-500", bg: "bg-rose-50", ring: "ring-rose-100" },
-  { role: "partner", label: "Partner", icon: Building2, gradient: "from-emerald-500 to-teal-500", bg: "bg-emerald-50", ring: "ring-emerald-100" },
-  { role: "sponsor", label: "Sponsor", icon: Heart, gradient: "from-violet-500 to-purple-500", bg: "bg-violet-50", ring: "ring-violet-100" },
+  { role: "user", label: "Kullanıcı", icon: Users, gradient: "from-blue-600 to-indigo-600", bg: "bg-blue-950/30", ring: "ring-blue-900" },
+  { role: "admin", label: "Admin", icon: Shield, gradient: "from-purple-600 to-violet-600", bg: "bg-purple-950/30", ring: "ring-purple-900" },
+  { role: "partner", label: "Partner", icon: Building2, gradient: "from-emerald-600 to-teal-600", bg: "bg-emerald-950/30", ring: "ring-emerald-900" },
+  { role: "sponsor", label: "Sponsor", icon: Heart, gradient: "from-rose-600 to-pink-600", bg: "bg-rose-950/30", ring: "ring-rose-900" },
 ];
 
 export default function LoginPage() {
@@ -54,49 +54,59 @@ export default function LoginPage() {
   };
 
   const handleQuickLogin = async (role: string) => {
-    setFocusedRole(role);
-    await loginAsRole(role);
-    toast.success("Hos geldiniz!");
-    switch (role) {
-      case "admin": router.push("/admin"); break;
-      case "partner": router.push("/partner"); break;
-      case "sponsor": router.push("/sponsor"); break;
-      default: router.push("/home");
+    try {
+      setFocusedRole(role);
+      await loginAsRole(role);
+      toast.success("Hoş geldiniz!");
+      
+      setTimeout(() => {
+        if (role === "admin") router.push("/admin");
+        else if (role === "partner") router.push("/partner");
+        else if (role === "sponsor") router.push("/sponsor");
+        else router.push("/home");
+      }, 100);
+    } catch (err) {
+      console.error("Quick Login Error:", err);
+      window.location.href = "/home"; // Force redirect on unknown router failures
     }
   };
 
   if (!mounted) return null;
 
   return (
-    <div>
+    <div className="min-h-screen aurora-bg flex flex-col justify-center px-6 py-12 relative overflow-hidden">
+      {/* Decorative background glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[400px] bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
+      
+      <div className="relative z-10 max-w-sm w-full mx-auto">
       {/* Branding */}
       <div className="text-center mb-10">
-        <motion.div
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.1 }}
-          className="relative inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-7"
-          style={{ background: "linear-gradient(135deg, #E8364F 0%, #FF6B8A 40%, #F5A623 100%)" }}
-        >
-          <Gift className="w-12 h-12 text-white drop-shadow-lg" />
-          {/* Glow ring */}
           <motion.div
-            className="absolute inset-0 rounded-[28px]"
-            style={{ background: "linear-gradient(135deg, #E8364F 0%, #FF6B8A 40%, #F5A623 100%)" }}
-            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          />
-          {/* Sparkle */}
-          <motion.div
-            className="absolute -top-1 -right-1"
-            animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
-            transition={{ duration: 3, repeat: Infinity }}
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.1 }}
+            className="relative inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-7"
+            style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)" }}
           >
-            <Sparkles className="w-5 h-5 text-amber-400 drop-shadow-lg" />
+            <Gift className="w-12 h-12 text-white drop-shadow-lg" />
+            {/* Glow ring */}
+            <motion.div
+              className="absolute inset-0 rounded-[28px]"
+              style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)" }}
+              animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            />
+            {/* Sparkle */}
+            <motion.div
+              className="absolute -top-1 -right-1"
+              animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <Sparkles className="w-5 h-5 text-indigo-300 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+            </motion.div>
           </motion.div>
-        </motion.div>
 
-        <motion.h1
+          <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
@@ -120,15 +130,15 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.6 }}
-        className="glass-card p-8"
+        className="glass-dark rounded-[32px] p-8 shadow-2xl"
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-[12px] font-bold text-muted mb-3 tracking-[0.1em] uppercase">
-              Telefon Numaraniz
+              Telefon Numarası
             </label>
             <div className="flex items-center gap-3">
-              <div className="flex items-center px-4 py-4 bg-white/80 rounded-2xl text-[14px] text-muted font-bold border border-border/50">
+              <div className="flex items-center px-4 py-4 bg-surface rounded-2xl text-[14px] text-muted font-bold border border-border/50">
                 <Phone className="w-4 h-4 mr-2 text-muted/60" />
                 +90
               </div>
@@ -172,21 +182,25 @@ export default function LoginPage() {
           {DEMO_ROLES.map((item, i) => (
             <motion.button
               key={item.role}
+              type="button"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + i * 0.08 }}
-              onClick={() => handleQuickLogin(item.role)}
+              onClick={(e) => {
+                e.preventDefault();
+                handleQuickLogin(item.role);
+              }}
               whileHover={{ y: -2, scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               className={cn(
                 "relative flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold text-foreground transition-all overflow-hidden border",
                 focusedRole === item.role
-                  ? `${item.bg} ${item.ring} ring-2 border-transparent`
-                  : "bg-white/60 border-border/50 hover:bg-white hover:border-border"
+                  ? `${item.bg} ${item.ring} ring-2 border-transparent shadow-[0_0_20px_rgba(139,92,246,0.15)]`
+                  : "bg-surface/50 border-border/50 hover:bg-surface hover:border-border"
               )}
             >
               <div className={cn(
-                "w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br text-white shadow-sm",
+                "w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br text-white shadow-md",
                 item.gradient
               )}>
                 <item.icon className="w-4 h-4" />
@@ -202,14 +216,15 @@ export default function LoginPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="text-center text-[11px] text-muted/70 mt-8 font-medium leading-relaxed"
+        className="text-center text-[11px] text-muted/70 mt-8 font-medium leading-relaxed max-w-[280px] mx-auto"
       >
         Devam ederek{" "}
-        <span className="underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors">Gizlilik Politikasi</span>
+        <span className="underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors">Gizlilik Politikası</span>
         {" "}ve{" "}
-        <span className="underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors">Kullanim Kosullari</span>
-        &apos;ni kabul edersiniz.
+        <span className="underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors">Kullanım Koşulları</span>
+        'nı kabul edersiniz.
       </motion.p>
+      </div>
     </div>
   );
 }

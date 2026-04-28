@@ -24,18 +24,30 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isInitialized = useAppStore((s) => s.isInitialized);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => { 
+    setMounted(true); 
+    setHasHydrated(true); // Wait for first client effect
+  }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!hasHydrated) return; // Wait until Zustand finishes its magic
+
     if (!isAuthenticated) {
       router.replace("/login");
     } else if (!isInitialized) {
       initializeData();
     }
-  }, [isAuthenticated, router, isInitialized, initializeData, mounted]);
+  }, [isAuthenticated, router, isInitialized, initializeData, hasHydrated]);
 
-  if (!mounted || !isAuthenticated || !currentUser) return null;
+  if (!mounted) {
+    return <div className="min-h-screen bg-background flex justify-center items-center"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"/></div>;
+  }
+  
+  if (!isAuthenticated || !currentUser) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col min-h-screen max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto w-full bg-background">
@@ -51,7 +63,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 3, repeat: Infinity }}
               >
-                <Sparkles className="w-4 h-4 text-amber-500" />
+                <Sparkles className="w-4 h-4 text-violet-400" />
               </motion.div>
             )}
           </Link>
@@ -85,8 +97,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Premium Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
-        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 pb-1">
-          <div className="glass rounded-2xl mx-1 mb-2 shadow-lg shadow-black/[0.04] border border-white/60">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 pb-2">
+          <div className="glass-dark rounded-[24px] mx-1 mb-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/5">
             <div className="flex items-center justify-around py-2 px-2">
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -99,16 +111,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.92 }}
                         className={cn(
-                          "flex items-center justify-center w-14 h-14 -mt-5 rounded-2xl shadow-lg transition-all",
+                          "flex items-center justify-center w-14 h-14 -mt-5 rounded-2xl shadow-lg transition-all border border-white/10",
                           isActive
-                            ? "shadow-primary/30"
-                            : "shadow-black/10"
+                            ? "shadow-[0_0_20px_rgba(139,92,246,0.5)] bg-gradient-to-br from-primary to-secondary"
+                            : "shadow-black/40 bg-surface"
                         )}
-                        style={{
-                          background: isActive
-                            ? "linear-gradient(135deg, #E8364F 0%, #FF6B8A 100%)"
-                            : "linear-gradient(135deg, #1A1A1A 0%, #333 100%)"
-                        }}
                       >
                         <Gift className="w-6 h-6 text-white" />
                       </motion.div>

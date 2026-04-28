@@ -1,0 +1,73 @@
+%% ============================================================
+%% iyikiApp - PROJE MİMARİ DİYAGRAMI
+%% ============================================================
+
+%% 1. GENEL MİMARİ (System Architecture)
+%% ============================================================
+
+graph TB
+    subgraph CLIENT["🖥️ Client - Next.js 16 + React 19"]
+        direction TB
+        RootLayout["Root Layout<br/>Geist Font, Toaster, TR"]
+
+        subgraph AUTH["🔐 Auth Modülü"]
+            LoginPage["Login Page<br/>Telefon ile giriş"]
+            VerifyPage["Verify Page<br/>OTP doğrulama"]
+        end
+
+        subgraph MAIN["📱 Ana Uygulama (User)"]
+            HomePage["Home Page<br/>Hediye listesi, Aktivite"]
+            SendPage["Send Page<br/>Kategori seçimi"]
+            SendDetail["Send Detail<br/>Alıcı + Not"]
+            ProfilePage["Profile Page<br/>Profil, Skor, Premium"]
+            NotifPage["Notifications<br/>Bildirimler"]
+            RedeemPage["Redeem Page<br/>QR ile kullanım"]
+            DropPage["Drop Page<br/>Haftalık Drop"]
+            AchievePage["Achievements<br/>Rozetler"]
+            CommunityPage["Community<br/>Topluluk havuzu"]
+            PremiumPage["Premium<br/>Üyelik yükselt"]
+        end
+
+        subgraph ADMIN["⚙️ Admin Paneli"]
+            AdminDash["Dashboard<br/>Genel istatistikler"]
+            AdminUsers["Users<br/>Kullanıcı yönetimi"]
+            AdminGifts["Gifts<br/>Hediye yönetimi"]
+            AdminPartners["Partners<br/>Partner yönetimi"]
+            AdminSponsors["Sponsors<br/>Sponsor yönetimi"]
+            AdminFraud["Fraud<br/>Dolandırıcılık"]
+        end
+
+        subgraph PARTNER["🏪 Partner Paneli"]
+            PartnerDash["Dashboard"]
+            PartnerProducts["Products"]
+            PartnerBranches["Branches"]
+            PartnerCampaigns["Campaigns"]
+            PartnerReports["Reports"]
+        end
+
+        subgraph SPONSOR["💰 Sponsor Paneli"]
+            SponsorDash["Dashboard"]
+            SponsorCampaigns["Campaigns"]
+            SponsorImpact["Impact"]
+        end
+    end
+
+    subgraph STATE["🗄️ State Management"]
+        Zustand["Zustand Store<br/>persist middleware"]
+        MockData["Mock Data<br/>Fallback veriler"]
+    end
+
+    subgraph BACKEND["☁️ Backend - Supabase"]
+        SupaAuth["Supabase Auth<br/>Phone OTP"]
+        SupaDB["PostgreSQL<br/>12 tablo, RLS"]
+        SupaRPC["RPC Functions<br/>decrement_stock, increment_score"]
+        SupaRLS["Row Level Security<br/>Kullanıcı bazlı erişim"]
+    end
+
+    CLIENT --> STATE
+    STATE --> BACKEND
+    RootLayout --> AUTH
+    RootLayout --> MAIN
+    RootLayout --> ADMIN
+    RootLayout --> PARTNER
+    RootLayout --> SPONSOR
