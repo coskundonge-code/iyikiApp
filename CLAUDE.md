@@ -26,3 +26,23 @@ Bu projede iki branch kullanılır:
 ---
 
 @AGENTS.md
+
+---
+
+## 🏷️ TAKMA AD HARİTASI
+
+Bu projenin farklı yerlerde farklı adı vardır. Hepsi **AYNI projedir**:
+
+| Yer | Ad |
+|---|---|
+| Drive klasörü | `iyikiApp` |
+| **Kanonik ad** | `iyiki` |
+| GitHub repo | `coskundonge-code/iyikiApp` |
+| package.json "name" | `iyiki-app` |
+| Vercel proje | `iyiki-app` |
+| Kullanıcı zihninde | iyikiApp, iyiki, İyi ki, iyiki app |
+
+### Eşleşme kuralı
+Kullanıcı şu kelimelerden birini söylerse → **bu projedesin**:
+- iyiki, İyi ki, iyikiapp, iyiki-app
+- iyikiApp, iyi-ki
